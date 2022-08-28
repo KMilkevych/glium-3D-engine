@@ -70,6 +70,7 @@ const FRAGMENT_SHADER: &str = r#"
     uniform vec3 u_light;
     uniform vec3 v_view;
 
+    uniform int num_directional_lights;
     uniform DirectionalLight directional_lights[10];
 
     const vec3 ambient_color = vec3(0.1, 0.1, 0.1);
@@ -93,16 +94,35 @@ const FRAGMENT_SHADER: &str = r#"
         return ((ambient_color * ambient_intensity) + (diffuse_color * diffuse) + (specular * specular_intensity * specular_color));
     }
 
+    vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir) {
+        vec3 light_dir = normalize(light.direction);
+
+        float diff = max(dot(normal, light_dir), 0.0);
+        
+        vec3 reflect_dir = -reflect(-light_dir, normal);
+        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
+
+        return (light.ambient_color + diff*light.diffuse_color + spec*light.specular_color);
+    }
+
     void main() {
         vec3 tex_color = vec3(v_texture, 1.0);
+        vec3 res_color = vec3(0.0, 0.0, 0.0);
 
+        vec3 norm = normalize(v_normal);
+        vec3 view_dir = normalize(v_view - v_position);
+
+        for (int i = 0; i < num_directional_lights; i++) {
+            res_color += calc_dir_light(directional_lights[i], norm, view_dir);
+        }
+
+        color = vec4(res_color * tex_color, 1.0);
         
 
-        vec3 resulting_color = calc_universal_point_light();
-        color = vec4(resulting_color * tex_color, 1.0);
+        //vec3 resulting_color = calc_universal_point_light();
+        //color = vec4(resulting_color * tex_color, 1.0);
 
-
-        //color = vec4(directional_lights[0].diffuse_color, 1.0);
+       
     }
 
     
@@ -144,7 +164,7 @@ fn main() {
 
     // Prepare static scene
     let scene = build_scene();
-    let light_cube = Cube::new([-0.4, 0.6, -0.2], 0.1);
+    let light_cube = Cube::new([-1.0, 0.6, -0.2], 0.1);
 
     // Describe global lighting
     let global_light: [f32; 3] = light_cube.center();
@@ -185,7 +205,18 @@ fn main() {
             DirectionalLight {direction: (0.0, 0.0, 0.0), color: (0.0, 0.0, 0.0), intensity: 0.0 }; 10
         ];
         */
-        let directional_lights = [ DirectionalLight::new([-1.0, -1.0, 0.0], [1.0, 1.0, 1.0]); 10 ];
+        let directional_lights = [ 
+            DirectionalLight::new([-light_cube.center()[0], -light_cube.center()[1], -light_cube.center()[2]], [0.1, 1.0, 0.1]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [1.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+        ];
 
         let mut target = display.draw(); // Fetch the display
 
@@ -202,7 +233,7 @@ fn main() {
 
         // Build uniforms
         let uniform = StdUniform {
-            model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(), directional_lights: directional_lights
+            model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(), num_directional_lights: 2,  directional_lights: directional_lights
         };
 
         target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0); // Clear color and depth   

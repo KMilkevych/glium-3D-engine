@@ -12,7 +12,8 @@ pub mod Uniforms {
         pub perspective: [[f32; 4]; 4],
         pub u_light: [f32; 3],
         pub v_view: [f32; 3],
-        pub directional_lights: [DirectionalLight; 10],
+        pub num_directional_lights: i32,
+        pub directional_lights: [DirectionalLight; MAX_DIRECTIONAL_LIGHTS as usize],
     }
 
     impl glium::uniforms::Uniforms for StdUniform {
@@ -48,7 +49,9 @@ pub mod Uniforms {
                 [self.v_view[0], self.v_view[1], self.v_view[2]],
             ));
 
-            for i in 0..10 {
+            f("num_directional_lights", UniformValue::SignedInt(self.num_directional_lights));
+
+            for i in 0..MAX_DIRECTIONAL_LIGHTS {
                 f(&format!("directional_lights[{}].direction",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].direction));
                 f(&format!("directional_lights[{}].ambient_color",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].ambient_color));
                 f(&format!("directional_lights[{}].diffuse_color",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].diffuse_color));
