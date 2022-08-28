@@ -1,6 +1,8 @@
 
 mod Base3D;
 mod Camera3D;
+mod Lights3D;
+mod Uniform3D;  
 
 #[macro_use]
 extern crate glium;
@@ -8,6 +10,9 @@ extern crate glium;
 use glium::{glutin, Surface, Frame};
 use crate::Base3D::General::*;
 use crate::Camera3D::Camera;
+use crate::Lights3D::Lights::*;
+use crate::Uniform3D::Uniforms::StdUniform;
+
 
 enum Action {
     Stop,
@@ -43,15 +48,18 @@ const VERTEX_SHADER: &str = r#"
 
         v_position = vec3(model * vec4(position, 1.0));
         v_normal = transpose(inverse(mat3(model))) * normal;
-        
-        //v_position = gl_Position.xyz / gl_Position.w;
-        //v_normal = transpose(inverse(mat3(modelview))) * normal;
-        
     }
 "#;
 
 const FRAGMENT_SHADER: &str = r#"
     #version 150
+
+    struct DirectionalLight {
+        vec3 direction;
+        vec3 ambient_color;
+        vec3 diffuse_color;
+        vec3 specular_color;
+    };
 
     in vec3 v_normal;
     in vec3 v_position;
@@ -62,6 +70,8 @@ const FRAGMENT_SHADER: &str = r#"
     uniform vec3 u_light;
     uniform vec3 v_view;
 
+    uniform DirectionalLight directional_lights[10];
+
     const vec3 ambient_color = vec3(0.1, 0.1, 0.1);
     const vec3 diffuse_color = vec3(0.8, 0.8, 0.8);
     const vec3 specular_color = vec3(1.0, 1.0, 1.0);
@@ -69,9 +79,7 @@ const FRAGMENT_SHADER: &str = r#"
     const float ambient_intensity = 0.1;
     const float specular_intensity = 1.0;
 
-    void main() {
-        vec3 tex_color = vec3(v_texture, 1.0);
-
+    vec3 calc_universal_point_light() {
         vec3 norm = normalize(v_normal);
         vec3 light_dir = normalize(-(u_light - v_position));
 
@@ -82,18 +90,22 @@ const FRAGMENT_SHADER: &str = r#"
         vec3 reflect_dir = reflect(light_dir, norm);
         float specular = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
 
-        vec3 resulting_color = ((ambient_color * ambient_intensity) + (diffuse_color * diffuse) + (specular * specular_intensity * specular_color))*tex_color;
-        color = vec4(resulting_color, 1.0);
-
-        //vec3 camera_dir = normalize(-v_position);
-        //vec3 half_direction = normalize(normalize(u_light) + camera_dir);
-
-        //float specular = pow(max(dot(half_direction, normalize(v_normal)), 0.0), 16.0);
-        
-        //vec3 tex_color = vec3(v_texture, 1.0);
-        //color = vec4(ambient_color + diffuse * tex_color + specular * specular_color, 1.0);
-
+        return ((ambient_color * ambient_intensity) + (diffuse_color * diffuse) + (specular * specular_intensity * specular_color));
     }
+
+    void main() {
+        vec3 tex_color = vec3(v_texture, 1.0);
+
+        
+
+        vec3 resulting_color = calc_universal_point_light();
+        color = vec4(resulting_color * tex_color, 1.0);
+
+
+        //color = vec4(directional_lights[0].diffuse_color, 1.0);
+    }
+
+    
 "#;
 
 const FRAGMENT_SHADER_LIGHT: &str = r#"
@@ -123,6 +135,7 @@ fn main() {
     // Building window and event loop
     let mut event_loop = glutin::event_loop::EventLoop::new();
     let display = get_display(&event_loop);
+    let mut is_fullscreen: bool = false;
 
     // Prepare program and draw parameters
     let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
@@ -167,10 +180,17 @@ fn main() {
             Drawing phase (draw everything)
         */
 
+        /*
+        let mut directional_lights = [
+            DirectionalLight {direction: (0.0, 0.0, 0.0), color: (0.0, 0.0, 0.0), intensity: 0.0 }; 10
+        ];
+        */
+        let directional_lights = [ DirectionalLight::new([-1.0, -1.0, 0.0], [1.0, 1.0, 1.0]); 10 ];
+
         let mut target = display.draw(); // Fetch the display
 
-        let uniform_matrix = get_uniform(&[0.0, 0.0, 0.0], &[1.0, 1.0, 1.0], &[0.0, 0.0, 0.0]);
-        let view = get_view_matrix(&fps_camera.get_position(), &fps_camera.get_direction(), &fps_camera.get_orientation());
+        let model = get_uniform(&[0.0, 0.0, 0.0], &[1.0, 1.0, 1.0], &[0.0, 0.0, 0.0]);
+        let view = fps_camera.get_view_matrix();
         let perspective = get_perspective_matrix(&target);
         
         let vertex_buffer = glium::VertexBuffer::new(&display, &shape.get_vertices()).unwrap();
@@ -180,17 +200,21 @@ fn main() {
         let lights_vertex_buffer = glium::VertexBuffer::new(&display, &light_cube.get_vertices()).unwrap();
         let lights_normal_buffer = glium::VertexBuffer::new(&display, &light_cube.get_normals()).unwrap();
 
+        // Build uniforms
+        let uniform = StdUniform {
+            model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(), directional_lights: directional_lights
+        };
+
         target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0); // Clear color and depth   
-        target.draw((&vertex_buffer, &normal_buffer), &indices, &program, &uniform! {
-            model: uniform_matrix, view: view, perspective: perspective,
-            u_light: global_light, v_view: fps_camera.get_position()}, &draw_parameters).unwrap();
-        target.draw((&lights_vertex_buffer, &lights_normal_buffer), &indices, &program_lights, &uniform! {model: uniform_matrix, view: view, perspective: perspective}, &draw_parameters).unwrap();
+        target.draw((&vertex_buffer, &normal_buffer), &indices, &program, &uniform, &draw_parameters).unwrap();
+        target.draw((&lights_vertex_buffer, &lights_normal_buffer), &indices, &program_lights, &uniform! {model: model, view: view, perspective: perspective}, &draw_parameters).unwrap();
         target.finish().unwrap();
 
         /*
             Process events
         */
         let mut action = Action::Continue;
+        let mut fullscreen_toggle_pressed: bool = false;
         for event in events {
             match event {
                 glutin::event::Event::DeviceEvent { event, .. } => {
@@ -203,6 +227,9 @@ fn main() {
                         glutin::event::WindowEvent::KeyboardInput { input, .. } => match input.state {
                             glutin::event::ElementState::Pressed => match input.virtual_keycode {
                                 Some(glutin::event::VirtualKeyCode::Escape) => action = Action::Stop,
+                                Some(glutin::event::VirtualKeyCode::F1) => {
+                                    fullscreen_toggle_pressed = true;
+                                }
                                 _ => (),
                             },
                             _ => (),
@@ -213,6 +240,17 @@ fn main() {
                 _ => (),
             }
         };
+
+        if fullscreen_toggle_pressed {
+            if is_fullscreen {
+                display.gl_window().window().set_fullscreen(None);
+            } else {
+                let monitor_handle = display.gl_window().window().available_monitors().next().unwrap();
+                display.gl_window().window().set_fullscreen(Some(glium::glutin::window::Fullscreen::Borderless(Some(monitor_handle))));
+            }
+            is_fullscreen = !is_fullscreen;
+        }
+
         return action;
     });
 }
@@ -271,7 +309,7 @@ fn get_perspective_matrix(target: &Frame) -> [[f32; 4]; 4] {
 
     let fov: f32 = 3.141592 / 3.0;
     let zfar = 1024.0;
-    let znear = 0.1;
+    let znear = 0.01; // Reduced from 0.1 to 0.01 to prevent visually clipping through walls
 
     let f = 1.0 / (fov / 2.0).tan();
     return [
@@ -279,40 +317,6 @@ fn get_perspective_matrix(target: &Frame) -> [[f32; 4]; 4] {
         [0.0, f, 0.0, 0.0],
         [0.0, 0.0, (zfar + znear)/(zfar - znear), 1.0],
         [0.0, 0.0, -(2.0 * zfar * znear)/(zfar - znear), 0.0],
-    ]
-}
-
-fn get_view_matrix(position: &[f32; 3], direction: &[f32; 3], up: &[f32; 3]) -> [[f32; 4]; 4] {
-    let f = {
-        let f = direction;
-        let len = f[0] * f[0] + f[1] * f[1] + f[2] * f[2];
-        let len = len.sqrt();
-        [f[0] / len, f[1] / len, f[2] / len]
-    };
-
-    let s = [up[1] * f[2] - up[2] * f[1],
-             up[2] * f[0] - up[0] * f[2],
-             up[0] * f[1] - up[1] * f[0]];
-
-    let s_norm = {
-        let len = s[0] * s[0] + s[1] * s[1] + s[2] * s[2];
-        let len = len.sqrt();
-        [s[0] / len, s[1] / len, s[2] / len]
-    };
-
-    let u = [f[1] * s_norm[2] - f[2] * s_norm[1],
-             f[2] * s_norm[0] - f[0] * s_norm[2],
-             f[0] * s_norm[1] - f[1] * s_norm[0]];
-
-    let p = [-position[0] * s_norm[0] - position[1] * s_norm[1] - position[2] * s_norm[2],
-             -position[0] * u[0] - position[1] * u[1] - position[2] * u[2],
-             -position[0] * f[0] - position[1] * f[1] - position[2] * f[2]];
-
-    return [
-        [s_norm[0], u[0], f[0], 0.0],
-        [s_norm[1], u[1], f[1], 0.0],
-        [s_norm[2], u[2], f[2], 0.0],
-        [p[0], p[1], p[2], 1.0],
     ]
 }
 
@@ -343,9 +347,7 @@ fn start_loop<F>(event_loop: glutin::event_loop::EventLoop<()>, mut callback: F)
 
         let action = if run_callback {
             let action = callback(&events_buffer);
-            next_frame_time = Instant::now() + Duration::from_nanos(8333334);
-            // TODO: Add back the old accumulator loop in some way
-
+            next_frame_time = Instant::now() + Duration::from_nanos(8333334); // 120 FPS
             events_buffer.clear();
             action
         } else {
