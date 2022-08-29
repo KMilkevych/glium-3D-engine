@@ -2,9 +2,9 @@
 
 pub mod Lights {
 
-    pub const MAX_DIRECTIONAL_LIGHTS: u32 = 10;
-    pub const MAX_POINT_LIGHTS: u32 = 100;
-    pub const MAX_SPOT_LIGHTS: u32 = 100;
+    pub const MAX_DIRECTIONAL_LIGHTS: i32 = 10;
+    pub const MAX_POINT_LIGHTS: i32 = 100;
+    pub const MAX_SPOT_LIGHTS: i32 = 100;
 
     #[derive(Copy, Clone)]
     pub struct DirectionalLight {
@@ -19,7 +19,7 @@ pub mod Lights {
         pub fn new(direction: [f32; 3], color: [f32; 3]) -> DirectionalLight{
             return DirectionalLight {
                 direction: direction,
-                ambient_color: [color[0]*0.1, color[1]*0.1, color[2]*0.1],
+                ambient_color: [color[0]*0.03, color[1]*0.03, color[2]*0.03],
                 diffuse_color: color,
                 specular_color: color,
             }

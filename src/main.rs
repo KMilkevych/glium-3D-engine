@@ -3,15 +3,20 @@ mod Base3D;
 mod Camera3D;
 mod Lights3D;
 mod Uniform3D;  
+mod Material3D;
 
 #[macro_use]
 extern crate glium;
+extern crate image;
 
 use glium::{glutin, Surface, Frame};
 use crate::Base3D::General::*;
 use crate::Camera3D::Camera;
 use crate::Lights3D::Lights::*;
 use crate::Uniform3D::Uniforms::StdUniform;
+use crate::Material3D::Material::*;
+
+use std::io::Cursor;
 
 
 enum Action {
@@ -54,6 +59,12 @@ const VERTEX_SHADER: &str = r#"
 const FRAGMENT_SHADER: &str = r#"
     #version 150
 
+    struct Material {
+        sampler2D diffuse;
+        sampler2D specular;
+        float shininess;
+    };
+
     struct DirectionalLight {
         vec3 direction;
         vec3 ambient_color;
@@ -70,29 +81,10 @@ const FRAGMENT_SHADER: &str = r#"
     uniform vec3 u_light;
     uniform vec3 v_view;
 
+    uniform Material materials[32];
+
     uniform int num_directional_lights;
     uniform DirectionalLight directional_lights[10];
-
-    const vec3 ambient_color = vec3(0.1, 0.1, 0.1);
-    const vec3 diffuse_color = vec3(0.8, 0.8, 0.8);
-    const vec3 specular_color = vec3(1.0, 1.0, 1.0);
-
-    const float ambient_intensity = 0.1;
-    const float specular_intensity = 1.0;
-
-    vec3 calc_universal_point_light() {
-        vec3 norm = normalize(v_normal);
-        vec3 light_dir = normalize(-(u_light - v_position));
-
-        float diffuse = max(dot(norm, light_dir), 0.0);
-        vec3 reflected_light = reflect(light_dir, norm);
-
-        vec3 view_dir = normalize(v_view - v_position);
-        vec3 reflect_dir = reflect(light_dir, norm);
-        float specular = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
-
-        return ((ambient_color * ambient_intensity) + (diffuse_color * diffuse) + (specular * specular_intensity * specular_color));
-    }
 
     vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir) {
         vec3 light_dir = normalize(light.direction);
@@ -102,11 +94,14 @@ const FRAGMENT_SHADER: &str = r#"
         vec3 reflect_dir = -reflect(-light_dir, normal);
         float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
 
-        return (light.ambient_color + diff*light.diffuse_color + spec*light.specular_color);
+        vec3 ambient = light.ambient_color * vec3(texture(materials[0].diffuse, v_texture));
+        vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[0].diffuse, v_texture));
+        vec3 specular = light.specular_color * spec * vec3(texture(materials[0].specular, v_texture));
+
+        return (ambient + diffuse + specular);
     }
 
     void main() {
-        vec3 tex_color = vec3(v_texture, 1.0);
         vec3 res_color = vec3(0.0, 0.0, 0.0);
 
         vec3 norm = normalize(v_normal);
@@ -116,12 +111,7 @@ const FRAGMENT_SHADER: &str = r#"
             res_color += calc_dir_light(directional_lights[i], norm, view_dir);
         }
 
-        color = vec4(res_color * tex_color, 1.0);
-        
-
-        //vec3 resulting_color = calc_universal_point_light();
-        //color = vec4(resulting_color * tex_color, 1.0);
-
+        color = vec4(res_color, 1.0);
        
     }
 
@@ -151,16 +141,26 @@ const CAMERA_MOVE_SPEED: f32 = 0.01;
 const CAMERA_ROTATE_SPEED: f32 = 0.1;
 
 fn main() {
-    
+
+
     // Building window and event loop
     let mut event_loop = glutin::event_loop::EventLoop::new();
     let display = get_display(&event_loop);
     let mut is_fullscreen: bool = false;
 
+    // Load textures
+    let image_wall = image::load(Cursor::new(&include_bytes!("textures/tex_wall.jpg")), image::ImageFormat::Jpeg).unwrap().to_rgba8();
+    let image_wall_dimensions = image_wall.dimensions();
+    let image_wall = glium::texture::RawImage2d::from_raw_rgba_reversed(&image_wall.into_raw(), image_wall_dimensions);
+    let texture_wall = glium::texture::SrgbTexture2d::new(&display, image_wall).unwrap();
+
     // Prepare program and draw parameters
     let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
     let program_lights = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER_LIGHT, None).unwrap();
     let draw_parameters = get_draw_parameters();
+
+    // Prepare fps camera
+    let mut fps_camera = Camera::new([0.0, 0.0, -1.0], [0.0, 1.0, 0.0], 0.0, 90.0, CAMERA_MOVE_SPEED, CAMERA_ROTATE_SPEED);
 
     // Prepare static scene
     let scene = build_scene();
@@ -168,9 +168,6 @@ fn main() {
 
     // Describe global lighting
     let global_light: [f32; 3] = light_cube.center();
-
-    // Prepare fps camera
-    let mut fps_camera = Camera::new([0.0, 0.0, -1.0], [0.0, 1.0, 0.0], 0.0, 90.0, CAMERA_MOVE_SPEED, CAMERA_ROTATE_SPEED);
 
     // Run event loop
     let mut t: f32 = 0.0;
@@ -206,8 +203,7 @@ fn main() {
         ];
         */
         let directional_lights = [ 
-            DirectionalLight::new([-light_cube.center()[0], -light_cube.center()[1], -light_cube.center()[2]], [0.1, 1.0, 0.1]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [1.0, 0.0, 0.0]),
+            DirectionalLight::new([-light_cube.center()[0], -light_cube.center()[1], -light_cube.center()[2]], [1.0, 1.0, 1.0]),
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
@@ -216,6 +212,11 @@ fn main() {
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+        ];
+
+        let materials = [
+            Material::new(&texture_wall, &texture_wall, 16.0); 32
         ];
 
         let mut target = display.draw(); // Fetch the display
@@ -233,7 +234,8 @@ fn main() {
 
         // Build uniforms
         let uniform = StdUniform {
-            model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(), num_directional_lights: 2,  directional_lights: directional_lights
+            model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(),
+            materials: materials, num_directional_lights: 2,  directional_lights: directional_lights
         };
 
         target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0); // Clear color and depth   
