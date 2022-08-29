@@ -156,6 +156,8 @@ fn main() {
     // Load textures
     let texture_wall = load_texture(&display, include_bytes!("textures/tex_wall.jpg"), image::ImageFormat::Jpeg);
     let texture_box = load_texture(&display, include_bytes!("textures/tex_box.jpg"), image::ImageFormat::Jpeg);
+    let texture_metal_box = load_texture(&display, include_bytes!("textures/tex_metal_box.png"), image::ImageFormat::Png);
+    let specular_metal_box = load_texture(&display, include_bytes!("textures/spec_metal_box.png"), image::ImageFormat::Png);
 
     // Prepare program and draw parameters
     let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
@@ -205,24 +207,17 @@ fn main() {
             DirectionalLight {direction: (0.0, 0.0, 0.0), color: (0.0, 0.0, 0.0), intensity: 0.0 }; 10
         ];
         */
-        let directional_lights = [ 
-            DirectionalLight::new([-light_cube.center()[0], -light_cube.center()[1], -light_cube.center()[2]], [1.0, 1.0, 1.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
-            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
+        let mut directional_lights = [    
+            DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]); MAX_DIRECTIONAL_LIGHTS as usize
         ];
+        directional_lights[0] = DirectionalLight::new([-light_cube.center()[0], -light_cube.center()[1], -light_cube.center()[2]], [1.0, 1.0, 1.0]);
 
         let mut materials = [
-            Material::new(&texture_wall, &texture_wall, 16.0); 32
+            Material::new(&texture_wall, &texture_wall, 16.0); MAX_MATERIALS as usize
         ];
         materials[0] = Material::new(&texture_wall, &texture_wall, 16.0);
         materials[1] = Material::new(&texture_box, &texture_box, 16.0);
+        materials[2] = Material::new(&texture_metal_box, &specular_metal_box, 32.0);
 
         let mut target = display.draw(); // Fetch the display
 
@@ -295,7 +290,7 @@ fn main() {
 
 fn build_scene() -> impl Shape3D {
     let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 1);
-    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 0);
+    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 2);
     let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 0);
 
     let mut scene: Vec<&dyn Shape3D> = Vec::new();
