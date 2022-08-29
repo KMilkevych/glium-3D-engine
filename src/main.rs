@@ -92,19 +92,18 @@ const FRAGMENT_SHADER: &str = r#"
     uniform DirectionalLight directional_lights[10];
 
     vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir) {
-        vec3 light_dir = normalize(light.direction);
+        vec3 light_dir = normalize(-light.direction);
 
-        float diff = max(dot(normal, light_dir), 0.0);
+        float diff = max(dot(normal, -light_dir), 0.0);
         
-        vec3 reflect_dir = -reflect(-light_dir, normal);
-        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
+        vec3 reflect_dir = reflect(-light_dir, normal);
+        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 128);
 
         vec3 ambient = light.ambient_color * vec3(texture(materials[i_material].diffuse, v_texture));
         vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[i_material].diffuse, v_texture));
         vec3 specular = light.specular_color * spec * vec3(texture(materials[i_material].specular, v_texture));
 
-        //return (ambient + diffuse + specular);
-        return specular;
+        return (ambient + diffuse + specular);
     }
 
     void main() {
