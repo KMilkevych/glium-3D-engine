@@ -16,6 +16,8 @@ pub mod Uniforms {
         pub materials: [Material<'a>; MAX_MATERIALS as usize],
         pub num_directional_lights: i32,
         pub directional_lights: [DirectionalLight; MAX_DIRECTIONAL_LIGHTS as usize],
+        pub num_point_lights: i32,
+        pub point_lights: [PointLight; MAX_POINT_LIGHTS as usize],
     }
 
     impl glium::uniforms::Uniforms for StdUniform<'_> {
@@ -64,6 +66,18 @@ pub mod Uniforms {
                 f(&format!("directional_lights[{}].ambient_color",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].ambient_color));
                 f(&format!("directional_lights[{}].diffuse_color",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].diffuse_color));
                 f(&format!("directional_lights[{}].specular_color",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].specular_color));
+            }
+
+            f("num_point_lights", UniformValue::SignedInt(self.num_point_lights));
+
+            for i in 0..MAX_POINT_LIGHTS {
+                f(&format!("point_lights[{}].position",i)[..], UniformValue::Vec3(self.point_lights[i as usize].position));
+                f(&format!("point_lights[{}].constant",i)[..], UniformValue::Float(self.point_lights[i as usize].constant));
+                f(&format!("point_lights[{}].linear",i)[..], UniformValue::Float(self.point_lights[i as usize].linear));
+                f(&format!("point_lights[{}].quadratic",i)[..], UniformValue::Float(self.point_lights[i as usize].quadratic));
+                f(&format!("point_lights[{}].ambient_color",i)[..], UniformValue::Vec3(self.point_lights[i as usize].ambient_color));
+                f(&format!("point_lights[{}].diffuse_color",i)[..], UniformValue::Vec3(self.point_lights[i as usize].diffuse_color));
+                f(&format!("point_lights[{}].specular_color",i)[..], UniformValue::Vec3(self.point_lights[i as usize].specular_color));
             }
         }
     }

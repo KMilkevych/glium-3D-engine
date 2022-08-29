@@ -76,6 +76,16 @@ const FRAGMENT_SHADER: &str = r#"
         vec3 specular_color;
     };
 
+    struct PointLight {
+        vec3 position;
+        float constant;
+        float linear;
+        float quadratic;
+        vec3 ambient_color;
+        vec3 diffuse_color;
+        vec3 specular_color;
+    };
+
     in vec3 v_normal;
     in vec3 v_position;
     in vec2 v_texture;
@@ -89,7 +99,10 @@ const FRAGMENT_SHADER: &str = r#"
     uniform Material materials[32];
 
     uniform int num_directional_lights;
-    uniform DirectionalLight directional_lights[10];
+    uniform DirectionalLight directional_lights[4];
+
+    uniform int num_point_lights;
+    uniform PointLight point_lights[128];
 
     vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir) {
         vec3 light_dir = normalize(-light.direction);
@@ -97,13 +110,31 @@ const FRAGMENT_SHADER: &str = r#"
         float diff = max(dot(normal, -light_dir), 0.0);
         
         vec3 reflect_dir = reflect(-light_dir, normal);
-        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 128);
+        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), materials[i_material].shininess);
 
         vec3 ambient = light.ambient_color * vec3(texture(materials[i_material].diffuse, v_texture));
         vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[i_material].diffuse, v_texture));
         vec3 specular = light.specular_color * spec * vec3(texture(materials[i_material].specular, v_texture));
 
         return (ambient + diffuse + specular);
+    }
+
+    vec3 calc_point_light(PointLight light, vec3 normal, vec3 position, vec3 view_dir) {
+        float distance = length(light.position - position);
+        float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
+
+        vec3 light_dir = -normalize(light.position - position);
+
+        float diff = max(dot(normal, light_dir), 0.0);
+        
+        vec3 reflect_dir = reflect(light_dir, normal);
+        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), materials[i_material].shininess);
+
+        vec3 ambient = light.ambient_color * vec3(texture(materials[i_material].diffuse, v_texture));
+        vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[i_material].diffuse, v_texture));
+        vec3 specular = light.specular_color * spec * vec3(texture(materials[i_material].specular, v_texture));
+
+        return (ambient + diffuse + specular)*attenuation;
     }
 
     void main() {
@@ -114,6 +145,10 @@ const FRAGMENT_SHADER: &str = r#"
 
         for (int i = 0; i < num_directional_lights; i++) {
             res_color += calc_dir_light(directional_lights[i], norm, view_dir);
+        }
+
+        for (int i = 0; i < num_point_lights; i++) {
+            res_color += calc_point_light(point_lights[i], norm, v_position, view_dir);
         }
 
         color = vec4(res_color, 1.0);
@@ -159,7 +194,7 @@ fn main() {
     let texture_metal_box = load_texture(&display, include_bytes!("textures/tex_metal_box.png"), image::ImageFormat::Png);
     let specular_metal_box = load_texture(&display, include_bytes!("textures/spec_metal_box.png"), image::ImageFormat::Png);
 
-    let texture_blueish = load_texture_from_color(&display, [0.1, 0.2, 1.0]);
+    let texture_err = load_texture_from_color(&display, [1.0, 0.0, 1.0]);
 
     // Prepare program and draw parameters
     let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
@@ -171,7 +206,7 @@ fn main() {
 
     // Prepare static scene
     let scene = build_scene();
-    let light_cube = Cube::new([-1.0, 0.6, -0.2], 0.1, 0);
+    let light_cube = Cube::new([0.0, 0.3, 0.0], 0.1, 0);
 
     // Describe global lighting
     let global_light: [f32; 3] = light_cube.center();
@@ -201,26 +236,27 @@ fn main() {
         let shape = combine_shapes(&shapes);
 
         /*
-            Drawing phase (draw everything)
-        */
-
-        /*
-        let mut directional_lights = [
-            DirectionalLight {direction: (0.0, 0.0, 0.0), color: (0.0, 0.0, 0.0), intensity: 0.0 }; 10
-        ];
+        Create lights
         */
         let mut directional_lights = [    
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]); MAX_DIRECTIONAL_LIGHTS as usize
         ];
-        directional_lights[0] = DirectionalLight::new([-light_cube.center()[0], -light_cube.center()[1], -light_cube.center()[2]], [1.0, 1.0, 1.0]);
+        //directional_lights[0] = DirectionalLight::new([1.0, -0.6, 0.2], [1.0, 1.0, 1.0]);
 
-        let mut materials = [
-            Material::new(&texture_wall, &texture_wall, 16.0); MAX_MATERIALS as usize
+        let mut point_lights = [
+            PointLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]); MAX_POINT_LIGHTS as usize
         ];
-        materials[0] = Material::new(&texture_wall, &texture_wall, 16.0);
-        materials[1] = Material::new(&texture_box, &texture_box, 16.0);
-        materials[2] = Material::new(&texture_metal_box, &specular_metal_box, 32.0);
-        materials[3] = Material::new(&texture_blueish, &texture_blueish, 64.0);
+        point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 0.4]);
+
+        /*
+        Create materials
+        */
+        let mut materials = [
+            Material::new(&texture_err, &texture_err, 0.0); MAX_MATERIALS as usize
+        ];
+        materials[1] = Material::new(&texture_wall, &texture_wall, 16.0);
+        materials[2] = Material::new(&texture_box, &texture_box, 16.0);
+        materials[3] = Material::new(&texture_metal_box, &specular_metal_box, 32.0);
 
         let mut target = display.draw(); // Fetch the display
 
@@ -238,7 +274,7 @@ fn main() {
         // Build uniforms
         let uniform = StdUniform {
             model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(),
-            materials: materials, num_directional_lights: 2,  directional_lights: directional_lights
+            materials: materials, num_directional_lights: 1,  directional_lights: directional_lights, num_point_lights: 1, point_lights: point_lights
         };
 
         target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0); // Clear color and depth   
@@ -292,9 +328,9 @@ fn main() {
 }
 
 fn build_scene() -> impl Shape3D {
-    let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 1);
+    let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 2);
     let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 3);
-    let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 0);
+    let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 1);
 
     let mut scene: Vec<&dyn Shape3D> = Vec::new();
     scene.push(&cube1);
