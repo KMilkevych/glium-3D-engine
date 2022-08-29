@@ -9,6 +9,7 @@ mod Material3D;
 extern crate glium;
 extern crate image;
 
+use glium::texture::SrgbTexture2d;
 use glium::{glutin, Surface, Frame};
 use crate::Base3D::General::*;
 use crate::Camera3D::Camera;
@@ -17,7 +18,7 @@ use crate::Uniform3D::Uniforms::StdUniform;
 use crate::Material3D::Material::*;
 
 use std::io::Cursor;
-
+use std::fmt;
 
 enum Action {
     Stop,
@@ -35,10 +36,12 @@ const VERTEX_SHADER: &str = r#"
     in vec3 normal;
 
     in vec2 texture;
+    in int material_id;
 
     out vec3 v_normal;
     out vec3 v_position;
     out vec2 v_texture;
+    flat out int i_material;
 
     uniform mat4 perspective;
     uniform mat4 view;
@@ -46,6 +49,7 @@ const VERTEX_SHADER: &str = r#"
 
     void main() {
         v_texture = texture;
+        i_material = material_id;
 
         mat4 modelview = view * model;
         
@@ -75,6 +79,7 @@ const FRAGMENT_SHADER: &str = r#"
     in vec3 v_normal;
     in vec3 v_position;
     in vec2 v_texture;
+    flat in int i_material;
 
     out vec4 color;
 
@@ -94,11 +99,12 @@ const FRAGMENT_SHADER: &str = r#"
         vec3 reflect_dir = -reflect(-light_dir, normal);
         float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 32.0);
 
-        vec3 ambient = light.ambient_color * vec3(texture(materials[0].diffuse, v_texture));
-        vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[0].diffuse, v_texture));
-        vec3 specular = light.specular_color * spec * vec3(texture(materials[0].specular, v_texture));
+        vec3 ambient = light.ambient_color * vec3(texture(materials[i_material].diffuse, v_texture));
+        vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[i_material].diffuse, v_texture));
+        vec3 specular = light.specular_color * spec * vec3(texture(materials[i_material].specular, v_texture));
 
-        return (ambient + diffuse + specular);
+        //return (ambient + diffuse + specular);
+        return specular;
     }
 
     void main() {
@@ -149,10 +155,8 @@ fn main() {
     let mut is_fullscreen: bool = false;
 
     // Load textures
-    let image_wall = image::load(Cursor::new(&include_bytes!("textures/tex_wall.jpg")), image::ImageFormat::Jpeg).unwrap().to_rgba8();
-    let image_wall_dimensions = image_wall.dimensions();
-    let image_wall = glium::texture::RawImage2d::from_raw_rgba_reversed(&image_wall.into_raw(), image_wall_dimensions);
-    let texture_wall = glium::texture::SrgbTexture2d::new(&display, image_wall).unwrap();
+    let texture_wall = load_texture(&display, include_bytes!("textures/tex_wall.jpg"), image::ImageFormat::Jpeg);
+    let texture_box = load_texture(&display, include_bytes!("textures/tex_box.jpg"), image::ImageFormat::Jpeg);
 
     // Prepare program and draw parameters
     let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
@@ -164,7 +168,7 @@ fn main() {
 
     // Prepare static scene
     let scene = build_scene();
-    let light_cube = Cube::new([-1.0, 0.6, -0.2], 0.1);
+    let light_cube = Cube::new([-1.0, 0.6, -0.2], 0.1, 0);
 
     // Describe global lighting
     let global_light: [f32; 3] = light_cube.center();
@@ -215,9 +219,11 @@ fn main() {
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]),
         ];
 
-        let materials = [
+        let mut materials = [
             Material::new(&texture_wall, &texture_wall, 16.0); 32
         ];
+        materials[0] = Material::new(&texture_wall, &texture_wall, 16.0);
+        materials[1] = Material::new(&texture_box, &texture_box, 16.0);
 
         let mut target = display.draw(); // Fetch the display
 
@@ -289,9 +295,9 @@ fn main() {
 }
 
 fn build_scene() -> impl Shape3D {
-    let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4);
-    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4);
-    let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]]);
+    let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 1);
+    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 0);
+    let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 0);
 
     let mut scene: Vec<&dyn Shape3D> = Vec::new();
     scene.push(&cube1);
@@ -299,6 +305,13 @@ fn build_scene() -> impl Shape3D {
     scene.push(&quad);
     
     return combine_shapes(&scene);
+}
+
+fn load_texture(display: &glium::Display, bytes: &'static [u8], format: image::ImageFormat) -> SrgbTexture2d {
+    let image_wall = image::load(Cursor::new(bytes), format).unwrap().to_rgba8();
+    let image_wall_dimensions = image_wall.dimensions();
+    let image_wall = glium::texture::RawImage2d::from_raw_rgba_reversed(&image_wall.into_raw(), image_wall_dimensions);
+    return glium::texture::SrgbTexture2d::new(display, image_wall).unwrap();
 }
 
 fn get_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {

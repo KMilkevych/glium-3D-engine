@@ -3,8 +3,9 @@ pub mod General {
     pub struct Vertex {
         pub position: [f32; 3],
         pub texture: [f32; 2],
+        pub material_id: i32,
     }
-    implement_vertex!(Vertex, position, texture);
+    implement_vertex!(Vertex, position, texture, material_id);
 
     #[derive(Copy, Clone)]
     pub struct Normal {
@@ -101,19 +102,19 @@ pub mod General {
     }
 
     impl Quad {
-        pub fn new(bottom_left: [f32; 3], plane: [[f32; 3]; 2]) -> Quad {
+        pub fn new(bottom_left: [f32; 3], plane: [[f32; 3]; 2], material_id: i32) -> Quad {
             let bl = bottom_left;
             let rv = plane[0];
             let lv = plane[1];
             return Quad {
                 vertices: vec![
-                    Vertex {position: [bl[0],                   bl[1],                  bl[2]],                     texture: [0.0, 0.0]},
-                    Vertex {position: [bl[0] + rv[0],           bl[1] + rv[1],          bl[2] + rv[2]],             texture: [1.0, 0.0]},
-                    Vertex {position: [bl[0] + rv[0] + lv[0],   bl[1] + rv[1] + lv[1],  bl[2] + rv[2] + lv[2]],     texture: [1.0, 1.0]},
+                    Vertex {position: [bl[0],                   bl[1],                  bl[2]],                     texture: [0.0, 0.0], material_id},
+                    Vertex {position: [bl[0] + rv[0],           bl[1] + rv[1],          bl[2] + rv[2]],             texture: [1.0, 0.0], material_id},
+                    Vertex {position: [bl[0] + rv[0] + lv[0],   bl[1] + rv[1] + lv[1],  bl[2] + rv[2] + lv[2]],     texture: [1.0, 1.0], material_id},
                     
-                    Vertex {position: [bl[0],                   bl[1],                  bl[2]],                 texture: [0.0, 0.0]},
-                    Vertex {position: [bl[0] + rv[0] + lv[0],   bl[1] + rv[1] + lv[1],  bl[2] + rv[2] + lv[2]], texture: [1.0, 1.0]},
-                    Vertex {position: [bl[0] + lv[0],           bl[1] + lv[1],          bl[2] + lv[2]],         texture: [0.0, 1.0]},                    
+                    Vertex {position: [bl[0],                   bl[1],                  bl[2]],                 texture: [0.0, 0.0], material_id},
+                    Vertex {position: [bl[0] + rv[0] + lv[0],   bl[1] + rv[1] + lv[1],  bl[2] + rv[2] + lv[2]], texture: [1.0, 1.0], material_id},
+                    Vertex {position: [bl[0] + lv[0],           bl[1] + lv[1],          bl[2] + lv[2]],         texture: [0.0, 1.0], material_id},                    
                 ],
                 normals: vec![Normal::normal(plane); 6],
             }
@@ -137,17 +138,17 @@ pub mod General {
     }
 
     impl Cube {
-        pub fn new(bottom_front_left: [f32; 3], side_length: f32) -> Cube {
+        pub fn new(bottom_front_left: [f32; 3], side_length: f32, material_id: i32) -> Cube {
 
             let sl = side_length;
             let bfl = bottom_front_left;
 
-            let top =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]]); // Top
-            let bottom =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]]); // Bottom
-            let front =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]]); // Front
-            let rear =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]]); // Rear
-            let left =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]]); // Left
-            let right =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]]); // Right
+            let top =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]], material_id); // Top
+            let bottom =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]], material_id); // Bottom
+            let front =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Front
+            let rear =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Rear
+            let left =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
+            let right =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
 
             let mut quads: Vec<&dyn Shape3D> = vec! [&top, &bottom, &front, &rear, &left, &right];
             let cube = combine_shapes(&quads);
