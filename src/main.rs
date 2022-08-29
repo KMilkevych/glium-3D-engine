@@ -159,6 +159,8 @@ fn main() {
     let texture_metal_box = load_texture(&display, include_bytes!("textures/tex_metal_box.png"), image::ImageFormat::Png);
     let specular_metal_box = load_texture(&display, include_bytes!("textures/spec_metal_box.png"), image::ImageFormat::Png);
 
+    let texture_blueish = load_texture_from_color(&display, [0.1, 0.2, 1.0]);
+
     // Prepare program and draw parameters
     let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
     let program_lights = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER_LIGHT, None).unwrap();
@@ -218,6 +220,7 @@ fn main() {
         materials[0] = Material::new(&texture_wall, &texture_wall, 16.0);
         materials[1] = Material::new(&texture_box, &texture_box, 16.0);
         materials[2] = Material::new(&texture_metal_box, &specular_metal_box, 32.0);
+        materials[3] = Material::new(&texture_blueish, &texture_blueish, 64.0);
 
         let mut target = display.draw(); // Fetch the display
 
@@ -290,7 +293,7 @@ fn main() {
 
 fn build_scene() -> impl Shape3D {
     let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 1);
-    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 2);
+    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 3);
     let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 0);
 
     let mut scene: Vec<&dyn Shape3D> = Vec::new();
@@ -302,10 +305,23 @@ fn build_scene() -> impl Shape3D {
 }
 
 fn load_texture(display: &glium::Display, bytes: &'static [u8], format: image::ImageFormat) -> SrgbTexture2d {
-    let image_wall = image::load(Cursor::new(bytes), format).unwrap().to_rgba8();
-    let image_wall_dimensions = image_wall.dimensions();
-    let image_wall = glium::texture::RawImage2d::from_raw_rgba_reversed(&image_wall.into_raw(), image_wall_dimensions);
-    return glium::texture::SrgbTexture2d::new(display, image_wall).unwrap();
+    let image = image::load(Cursor::new(bytes), format).unwrap().to_rgba8();
+    let image_dimensions = image.dimensions();
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+    return glium::texture::SrgbTexture2d::new(display, image).unwrap();
+}
+
+fn load_texture_from_color(display: &glium::Display, color: [f32; 3]) -> SrgbTexture2d {
+    let (dim_x, dim_y) = (1, 1);
+    let mut image_buffer = image::ImageBuffer::<image::Rgba<u8>, _>::new(dim_x, dim_y);
+    for (x, y, pixel) in image_buffer.enumerate_pixels_mut() {
+        let r: u8 = (color[0]*255.0).floor() as u8;
+        let g: u8 = (color[1]*255.0).floor() as u8;
+        let b: u8 = (color[2]*255.0).floor() as u8;
+        *pixel = image::Rgba([r, g, b, 255 as u8]);
+    }
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image_buffer.into_raw(), (dim_x, dim_y));
+    return glium::texture::SrgbTexture2d::new(display, image).unwrap();
 }
 
 fn get_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {
