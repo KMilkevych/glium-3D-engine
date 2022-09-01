@@ -3,7 +3,7 @@ mod Camera3D;
 mod Lights3D;
 mod Uniform3D;  
 mod Material3D;
-mod Graphics;
+mod GraphicsLoader2D;
 mod Shaders;
 
 #[macro_use]
@@ -18,7 +18,7 @@ use crate::Camera3D::Camera;
 use crate::Lights3D::Lights::*;
 use crate::Uniform3D::Uniforms::StdUniform;
 use crate::Material3D::Material::*;
-use crate::Graphics::GraphicsLoader;
+use crate::GraphicsLoader2D::GraphicsLoader;
 
 use std::io::Cursor;
 
@@ -36,22 +36,13 @@ const CAMERA_MOVE_SPEED: f32 = 0.01;
 const CAMERA_ROTATE_SPEED: f32 = 0.1;
 
 fn main() {
-
-
     // Building window and event loop
     let mut event_loop = glutin::event_loop::EventLoop::new();
     let display = get_display(&event_loop);
     let mut is_fullscreen: bool = false;
 
     // Load textures
-    let texture_err = GraphicsLoader::load_image_from_color([1.0, 0.0, 1.0]);
-    let texture_wall = GraphicsLoader::load_image(include_bytes!("textures/tex_wall.jpg"), image::ImageFormat::Jpeg);
-    let texture_box = GraphicsLoader::load_image(include_bytes!("textures/tex_box.jpg"), image::ImageFormat::Jpeg);
-    let texture_metal_box = GraphicsLoader::load_image(include_bytes!("textures/tex_metal_box.png"), image::ImageFormat::Png);
-    let specular_metal_box = GraphicsLoader::load_image(include_bytes!("textures/spec_metal_box.png"), image::ImageFormat::Png);
-
-    let images: Vec<RawImage2d<u8>> = vec! [texture_err, texture_wall, texture_box, texture_metal_box, specular_metal_box];
-    let textures = GraphicsLoader::create_texture_array(&display, images);
+    let textures = GraphicsLoader::load_all_textures(&display);
 
     // Prepare program and draw parameters
     let program = glium::Program::from_source(&display, Shaders::VERTEX_SHADER, Shaders::FRAGMENT_SHADER, None).unwrap();
@@ -105,7 +96,7 @@ fn main() {
         Create materials
         */
         let mut materials = [
-            Material::new(0, 0, 0.0); MAX_MATERIALS as usize
+            Material::new(0, 0, 16.0); MAX_MATERIALS as usize
         ];
         materials[1] = Material::new(1, 1, 16.0);
         materials[2] = Material::new(2, 2, 16.0);
@@ -194,7 +185,7 @@ fn main() {
 
 fn build_scene() -> impl Shape3D {
     let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 2);
-    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 3);
+    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 2);
     let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 1);
 
     let mut scene: Vec<&dyn Shape3D> = Vec::new();
