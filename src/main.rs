@@ -9,7 +9,8 @@ mod Material3D;
 extern crate glium;
 extern crate image;
 
-use glium::texture::SrgbTexture2d;
+use glium::texture::{SrgbTexture2d, SrgbTexture2dArray, Texture2dDataSource, PixelValue};
+use glium::texture::srgb_texture2d_array::SrgbTexture2dArrayMipmap;
 use glium::{glutin, Surface, Frame};
 use crate::Base3D::General::*;
 use crate::Camera3D::Camera;
@@ -64,8 +65,8 @@ const FRAGMENT_SHADER: &str = r#"
     #version 150
 
     struct Material {
-        sampler2D diffuse;
-        sampler2D specular;
+        int diffuse;
+        int specular;
         float shininess;
     };
 
@@ -96,6 +97,7 @@ const FRAGMENT_SHADER: &str = r#"
     uniform vec3 u_light;
     uniform vec3 v_view;
 
+    uniform sampler2DArray textures;
     uniform Material materials[32];
 
     uniform int num_directional_lights;
@@ -112,9 +114,9 @@ const FRAGMENT_SHADER: &str = r#"
         vec3 reflect_dir = reflect(-light_dir, normal);
         float spec = pow(max(dot(view_dir, reflect_dir), 0.0), materials[i_material].shininess);
 
-        vec3 ambient = light.ambient_color * vec3(texture(materials[i_material].diffuse, v_texture));
-        vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[i_material].diffuse, v_texture));
-        vec3 specular = light.specular_color * spec * vec3(texture(materials[i_material].specular, v_texture));
+        vec3 ambient = light.ambient_color * vec3(texture(textures, vec3(v_texture, materials[i_material].diffuse)));
+        vec3 diffuse = light.diffuse_color * diff * vec3(texture(textures, vec3(v_texture, materials[i_material].diffuse)));
+        vec3 specular = light.specular_color * spec * vec3(texture(textures, vec3(v_texture, materials[i_material].specular)));
 
         return (ambient + diffuse + specular);
     }
@@ -130,9 +132,9 @@ const FRAGMENT_SHADER: &str = r#"
         vec3 reflect_dir = reflect(light_dir, normal);
         float spec = pow(max(dot(view_dir, reflect_dir), 0.0), materials[i_material].shininess);
 
-        vec3 ambient = light.ambient_color * vec3(texture(materials[i_material].diffuse, v_texture));
-        vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[i_material].diffuse, v_texture));
-        vec3 specular = light.specular_color * spec * vec3(texture(materials[i_material].specular, v_texture));
+        vec3 ambient = light.ambient_color * vec3(texture(textures, vec3(v_texture, materials[i_material].diffuse)));
+        vec3 diffuse = light.diffuse_color * diff * vec3(texture(textures, vec3(v_texture, materials[i_material].diffuse)));
+        vec3 specular = light.specular_color * spec * vec3(texture(textures, vec3(v_texture, materials[i_material].specular)));
 
         return (ambient + diffuse + specular)*attenuation;
     }
@@ -189,12 +191,21 @@ fn main() {
     let mut is_fullscreen: bool = false;
 
     // Load textures
+    /*
     let texture_wall = load_texture(&display, include_bytes!("textures/tex_wall.jpg"), image::ImageFormat::Jpeg);
     let texture_box = load_texture(&display, include_bytes!("textures/tex_box.jpg"), image::ImageFormat::Jpeg);
     let texture_metal_box = load_texture(&display, include_bytes!("textures/tex_metal_box.png"), image::ImageFormat::Png);
     let specular_metal_box = load_texture(&display, include_bytes!("textures/spec_metal_box.png"), image::ImageFormat::Png);
+    */
 
-    let texture_err = load_texture_from_color(&display, [1.0, 0.0, 1.0]);
+    let texture_err = load_image_from_color([1.0, 0.0, 1.0]);
+
+    let texture_wall = load_image(include_bytes!("textures/tex_wall.jpg"), image::ImageFormat::Jpeg);
+    let texture_box = load_image(include_bytes!("textures/tex_box.jpg"), image::ImageFormat::Jpeg);
+    let texture_metal_box = load_image(include_bytes!("textures/tex_metal_box.png"), image::ImageFormat::Png);
+    let specular_metal_box = load_image(include_bytes!("textures/spec_metal_box.png"), image::ImageFormat::Png);
+
+    let textures: SrgbTexture2dArray = SrgbTexture2dArray::new(&display, vec! [texture_err, texture_wall, texture_box, texture_metal_box, specular_metal_box]).unwrap();
 
     // Prepare program and draw parameters
     let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
@@ -252,11 +263,11 @@ fn main() {
         Create materials
         */
         let mut materials = [
-            Material::new(&texture_err, &texture_err, 0.0); MAX_MATERIALS as usize
+            Material::new(0, 0, 0.0); MAX_MATERIALS as usize
         ];
-        materials[1] = Material::new(&texture_wall, &texture_wall, 16.0);
-        materials[2] = Material::new(&texture_box, &texture_box, 16.0);
-        materials[3] = Material::new(&texture_metal_box, &specular_metal_box, 32.0);
+        materials[1] = Material::new(1, 1, 16.0);
+        materials[2] = Material::new(2, 2, 16.0);
+        materials[3] = Material::new(3, 4, 32.0);
 
         let mut target = display.draw(); // Fetch the display
 
@@ -274,7 +285,8 @@ fn main() {
         // Build uniforms
         let uniform = StdUniform {
             model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(),
-            materials: materials, num_directional_lights: 1,  directional_lights: directional_lights, num_point_lights: 1, point_lights: point_lights
+            textures: &textures, materials: materials, num_directional_lights: 1,  directional_lights: directional_lights,
+            num_point_lights: 1, point_lights: point_lights
         };
 
         target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0); // Clear color and depth   
@@ -340,15 +352,17 @@ fn build_scene() -> impl Shape3D {
     return combine_shapes(&scene);
 }
 
-fn load_texture(display: &glium::Display, bytes: &'static [u8], format: image::ImageFormat) -> SrgbTexture2d {
+
+
+fn load_image(bytes: &'static [u8], format: image::ImageFormat) -> glium::texture::RawImage2d<u8> {
     let image = image::load(Cursor::new(bytes), format).unwrap().to_rgba8();
     let image_dimensions = image.dimensions();
     let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    return glium::texture::SrgbTexture2d::new(display, image).unwrap();
+    return image;
 }
 
-fn load_texture_from_color(display: &glium::Display, color: [f32; 3]) -> SrgbTexture2d {
-    let (dim_x, dim_y) = (1, 1);
+fn load_image_from_color(color: [f32; 3]) -> glium::texture::RawImage2d<'static, u8> {
+    let (dim_x, dim_y) = (512, 512);
     let mut image_buffer = image::ImageBuffer::<image::Rgba<u8>, _>::new(dim_x, dim_y);
     for (x, y, pixel) in image_buffer.enumerate_pixels_mut() {
         let r: u8 = (color[0]*255.0).floor() as u8;
@@ -356,9 +370,24 @@ fn load_texture_from_color(display: &glium::Display, color: [f32; 3]) -> SrgbTex
         let b: u8 = (color[2]*255.0).floor() as u8;
         *pixel = image::Rgba([r, g, b, 255 as u8]);
     }
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image_buffer.into_raw(), (dim_x, dim_y));
-    return glium::texture::SrgbTexture2d::new(display, image).unwrap();
+    return glium::texture::RawImage2d::from_raw_rgba_reversed(&image_buffer.into_raw(), (dim_x, dim_y));
 }
+
+fn load_texture(display: &glium::Display, bytes: &'static [u8], format: image::ImageFormat) -> SrgbTexture2d {
+    return glium::texture::SrgbTexture2d::new(display, load_image(bytes, format)).unwrap();
+}
+
+fn load_texture_from_color(display: &glium::Display, color: [f32; 3]) -> SrgbTexture2d {
+    return glium::texture::SrgbTexture2d::new(display, load_image_from_color(color)).unwrap();
+}
+
+fn create_texture_array(display: &glium::Display) -> SrgbTexture2dArray {
+    let image1 = load_image(include_bytes! ("textures/tex_wall.jpg"), image::ImageFormat::Jpeg);
+    let image2 = load_image(include_bytes! ("textures/tex_wall.jpg"), image::ImageFormat::Jpeg);
+    
+    return SrgbTexture2dArray::new(display, vec! [image1, image2]).unwrap();
+}
+
 
 fn get_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {
     let wb = glutin::window::WindowBuilder::new()

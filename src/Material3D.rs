@@ -1,18 +1,18 @@
 
 pub mod Material {
-    use glium::texture::SrgbTexture2d;
+    //use glium::texture::SrgbTexture2d;
 
-    pub const MAX_MATERIALS: i32 = 16;
+    pub const MAX_MATERIALS: i32 = 32;
 
     #[derive(Copy, Clone)]
-    pub struct Material<'a> {
-        pub diffuse: &'a SrgbTexture2d,
-        pub specular: &'a SrgbTexture2d,
+    pub struct Material {
+        pub diffuse: i32, // diffuse texture id
+        pub specular: i32, // specular texture id
         pub shininess: f32,
     }
 
-    impl Material<'_> {
-        pub fn new<'a>(diffuse: &'a SrgbTexture2d, specular: &'a SrgbTexture2d, shininess: f32) -> Material<'a> {
+    impl Material {
+        pub fn new(diffuse: i32, specular: i32, shininess: f32) -> Material {
             return Material {
                 diffuse: diffuse,
                 specular: specular,

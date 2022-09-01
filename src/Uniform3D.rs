@@ -4,7 +4,10 @@ mod Lights3D;
 pub mod Uniforms {
     use crate::Lights3D::Lights::*;
     use crate::Material3D::Material::*;
+    use glium::texture::SrgbTexture2dArray;
     use glium::uniforms::UniformValue;
+
+    const MAX_SAMPLERS: i32 = 32;
 
 
     pub struct StdUniform<'a> {
@@ -13,7 +16,8 @@ pub mod Uniforms {
         pub perspective: [[f32; 4]; 4],
         pub u_light: [f32; 3],
         pub v_view: [f32; 3],
-        pub materials: [Material<'a>; MAX_MATERIALS as usize],
+        pub textures: &'a SrgbTexture2dArray,
+        pub materials: [Material; MAX_MATERIALS as usize],
         pub num_directional_lights: i32,
         pub directional_lights: [DirectionalLight; MAX_DIRECTIONAL_LIGHTS as usize],
         pub num_point_lights: i32,
@@ -53,9 +57,11 @@ pub mod Uniforms {
                 [self.v_view[0], self.v_view[1], self.v_view[2]],
             ));
 
+            f("textures", UniformValue::SrgbTexture2dArray(&self.textures, None));
+
             for i in 0..MAX_MATERIALS {
-                f(&format!("materials[{}].diffuse",i)[..], UniformValue::SrgbTexture2d(&self.materials[i as usize].diffuse, None));
-                f(&format!("materials[{}].specular",i)[..], UniformValue::SrgbTexture2d(&self.materials[i as usize].specular, None));
+                f(&format!("materials[{}].diffuse",i)[..], UniformValue::SignedInt(self.materials[i as usize].diffuse));
+                f(&format!("materials[{}].specular",i)[..], UniformValue::SignedInt(self.materials[i as usize].specular));
                 f(&format!("materials[{}].shininess",i)[..], UniformValue::Float(self.materials[i as usize].shininess));
             }
 
