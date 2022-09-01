@@ -74,28 +74,6 @@ pub mod General {
         }
     }
 
-    pub fn combine_box_shapes(shapes: &Vec<Box<&dyn Shape3D>>) -> impl Shape3D {
-
-        let mut vertices: Vec<Vertex> = Vec::new();
-        let mut normals: Vec<Normal> = Vec::new();
-
-        for i in 0..shapes.len() {
-            let s_vertices = shapes[i].get_vertices();
-            let s_normals = shapes[i].get_normals();
-
-            for j in 0..s_vertices.len() {
-                vertices.push(s_vertices[j]);
-                normals.push(s_normals[j]);
-            }
-            
-        }
-
-        return AShape {
-            vertices: vertices,
-            normals: normals,
-        }
-    }
-
     pub struct Quad {
         pub vertices: Vec<Vertex>,
         pub normals: Vec<Normal>,
@@ -112,9 +90,9 @@ pub mod General {
                     Vertex {position: [bl[0] + rv[0],           bl[1] + rv[1],          bl[2] + rv[2]],             texture: [1.0, 0.0], material_id},
                     Vertex {position: [bl[0] + rv[0] + lv[0],   bl[1] + rv[1] + lv[1],  bl[2] + rv[2] + lv[2]],     texture: [1.0, 1.0], material_id},
                     
-                    Vertex {position: [bl[0],                   bl[1],                  bl[2]],                 texture: [0.0, 0.0], material_id},
-                    Vertex {position: [bl[0] + rv[0] + lv[0],   bl[1] + rv[1] + lv[1],  bl[2] + rv[2] + lv[2]], texture: [1.0, 1.0], material_id},
-                    Vertex {position: [bl[0] + lv[0],           bl[1] + lv[1],          bl[2] + lv[2]],         texture: [0.0, 1.0], material_id},                    
+                    Vertex {position: [bl[0],                   bl[1],                  bl[2]],                     texture: [0.0, 0.0], material_id},
+                    Vertex {position: [bl[0] + rv[0] + lv[0],   bl[1] + rv[1] + lv[1],  bl[2] + rv[2] + lv[2]],     texture: [1.0, 1.0], material_id},
+                    Vertex {position: [bl[0] + lv[0],           bl[1] + lv[1],          bl[2] + lv[2]],             texture: [0.0, 1.0], material_id},                    
                 ],
                 normals: vec![Normal::normal(plane); 6],
             }
@@ -150,7 +128,7 @@ pub mod General {
             let left =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
             let right =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
 
-            let mut quads: Vec<&dyn Shape3D> = vec! [&top, &bottom, &front, &rear, &left, &right];
+            let quads: Vec<&dyn Shape3D> = vec! [&top, &bottom, &front, &rear, &left, &right];
             let cube = combine_shapes(&quads);
 
             return Cube {
@@ -176,7 +154,4 @@ pub mod General {
         }
     }
 
-    
-
-    
 }

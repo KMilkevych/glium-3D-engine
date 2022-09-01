@@ -1,178 +1,33 @@
-
 mod Base3D;
 mod Camera3D;
 mod Lights3D;
 mod Uniform3D;  
 mod Material3D;
+mod GraphicsLoader2D;
+mod Shaders;
 
 #[macro_use]
 extern crate glium;
 extern crate image;
 
-use glium::texture::SrgbTexture2d;
+use glium::texture::{SrgbTexture2d, SrgbTexture2dArray, RawImage2d};
 use glium::{glutin, Surface, Frame};
+
 use crate::Base3D::General::*;
 use crate::Camera3D::Camera;
 use crate::Lights3D::Lights::*;
 use crate::Uniform3D::Uniforms::StdUniform;
 use crate::Material3D::Material::*;
+use crate::GraphicsLoader2D::GraphicsLoader;
 
 use std::io::Cursor;
-use std::fmt;
 
 enum Action {
     Stop,
     Continue,
 }
 
-/*
-* Defining vertex and fragment shaders
-*/
 
-const VERTEX_SHADER: &str = r#"
-    #version 150
-
-    in vec3 position;
-    in vec3 normal;
-
-    in vec2 texture;
-    in int material_id;
-
-    out vec3 v_normal;
-    out vec3 v_position;
-    out vec2 v_texture;
-    flat out int i_material;
-
-    uniform mat4 perspective;
-    uniform mat4 view;
-    uniform mat4 model;
-
-    void main() {
-        v_texture = texture;
-        i_material = material_id;
-
-        mat4 modelview = view * model;
-        
-        gl_Position = perspective * modelview * vec4(position, 1.0);
-
-        v_position = vec3(model * vec4(position, 1.0));
-        v_normal = transpose(inverse(mat3(model))) * normal;
-    }
-"#;
-
-const FRAGMENT_SHADER: &str = r#"
-    #version 150
-
-    struct Material {
-        sampler2D diffuse;
-        sampler2D specular;
-        float shininess;
-    };
-
-    struct DirectionalLight {
-        vec3 direction;
-        vec3 ambient_color;
-        vec3 diffuse_color;
-        vec3 specular_color;
-    };
-
-    struct PointLight {
-        vec3 position;
-        float constant;
-        float linear;
-        float quadratic;
-        vec3 ambient_color;
-        vec3 diffuse_color;
-        vec3 specular_color;
-    };
-
-    in vec3 v_normal;
-    in vec3 v_position;
-    in vec2 v_texture;
-    flat in int i_material;
-
-    out vec4 color;
-
-    uniform vec3 u_light;
-    uniform vec3 v_view;
-
-    uniform Material materials[32];
-
-    uniform int num_directional_lights;
-    uniform DirectionalLight directional_lights[4];
-
-    uniform int num_point_lights;
-    uniform PointLight point_lights[128];
-
-    vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir) {
-        vec3 light_dir = normalize(-light.direction);
-
-        float diff = max(dot(normal, -light_dir), 0.0);
-        
-        vec3 reflect_dir = reflect(-light_dir, normal);
-        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), materials[i_material].shininess);
-
-        vec3 ambient = light.ambient_color * vec3(texture(materials[i_material].diffuse, v_texture));
-        vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[i_material].diffuse, v_texture));
-        vec3 specular = light.specular_color * spec * vec3(texture(materials[i_material].specular, v_texture));
-
-        return (ambient + diffuse + specular);
-    }
-
-    vec3 calc_point_light(PointLight light, vec3 normal, vec3 position, vec3 view_dir) {
-        float distance = length(light.position - position);
-        float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
-
-        vec3 light_dir = -normalize(light.position - position);
-
-        float diff = max(dot(normal, light_dir), 0.0);
-        
-        vec3 reflect_dir = reflect(light_dir, normal);
-        float spec = pow(max(dot(view_dir, reflect_dir), 0.0), materials[i_material].shininess);
-
-        vec3 ambient = light.ambient_color * vec3(texture(materials[i_material].diffuse, v_texture));
-        vec3 diffuse = light.diffuse_color * diff * vec3(texture(materials[i_material].diffuse, v_texture));
-        vec3 specular = light.specular_color * spec * vec3(texture(materials[i_material].specular, v_texture));
-
-        return (ambient + diffuse + specular)*attenuation;
-    }
-
-    void main() {
-        vec3 res_color = vec3(0.0, 0.0, 0.0);
-
-        vec3 norm = normalize(v_normal);
-        vec3 view_dir = normalize(v_view - v_position);
-
-        for (int i = 0; i < num_directional_lights; i++) {
-            res_color += calc_dir_light(directional_lights[i], norm, view_dir);
-        }
-
-        for (int i = 0; i < num_point_lights; i++) {
-            res_color += calc_point_light(point_lights[i], norm, v_position, view_dir);
-        }
-
-        color = vec4(res_color, 1.0);
-       
-    }
-
-    
-"#;
-
-const FRAGMENT_SHADER_LIGHT: &str = r#"
-    #version 150
-
-    in vec3 v_normal;
-    in vec3 v_position;
-    in vec2 v_texture;
-
-    out vec4 color;
-
-    const vec3 v_color = vec3(1.0, 1.0, 1.0);
-
-    void main() {
-        color = vec4(v_color, 1.0);
-    }
-"#;
 
 /**
  * Defining camera move and rotate speed
@@ -181,24 +36,17 @@ const CAMERA_MOVE_SPEED: f32 = 0.01;
 const CAMERA_ROTATE_SPEED: f32 = 0.1;
 
 fn main() {
-
-
     // Building window and event loop
     let mut event_loop = glutin::event_loop::EventLoop::new();
     let display = get_display(&event_loop);
     let mut is_fullscreen: bool = false;
 
     // Load textures
-    let texture_wall = load_texture(&display, include_bytes!("textures/tex_wall.jpg"), image::ImageFormat::Jpeg);
-    let texture_box = load_texture(&display, include_bytes!("textures/tex_box.jpg"), image::ImageFormat::Jpeg);
-    let texture_metal_box = load_texture(&display, include_bytes!("textures/tex_metal_box.png"), image::ImageFormat::Png);
-    let specular_metal_box = load_texture(&display, include_bytes!("textures/spec_metal_box.png"), image::ImageFormat::Png);
-
-    let texture_err = load_texture_from_color(&display, [1.0, 0.0, 1.0]);
+    let textures = GraphicsLoader::load_all_textures(&display);
 
     // Prepare program and draw parameters
-    let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
-    let program_lights = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER_LIGHT, None).unwrap();
+    let program = glium::Program::from_source(&display, Shaders::VERTEX_SHADER, Shaders::FRAGMENT_SHADER, None).unwrap();
+    let program_lights = glium::Program::from_source(&display, Shaders::VERTEX_SHADER, Shaders::FRAGMENT_SHADER_LIGHT, None).unwrap();
     let draw_parameters = get_draw_parameters();
 
     // Prepare fps camera
@@ -215,75 +63,83 @@ fn main() {
     let mut t: f32 = 0.0;
     start_loop(event_loop, move |events| {
 
+        /*
+        Update Camera 
+        */
+
         fps_camera.update_position();
         fps_camera.update_direction();
 
         /*
-        Update all objects/shapes
-        */
-        t += 0.001;
-        if t > 6.283 {
-            t = 0.0;
-        }
-
-        /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"
+        to later place into single vertex buffer
         */
         
         let mut shapes: Vec<&dyn Shape3D> = Vec::new();
         shapes.push(&scene);
-
         let shape = combine_shapes(&shapes);
 
         /*
-        Create lights
+        Create Directional and Point lights
         */
         let mut directional_lights = [    
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]); MAX_DIRECTIONAL_LIGHTS as usize
         ];
-        //directional_lights[0] = DirectionalLight::new([1.0, -0.6, 0.2], [1.0, 1.0, 1.0]);
+        directional_lights[0] = DirectionalLight::new([-1.0, -0.6, 0.0], [1.0, 0.2, 0.2]);
 
         let mut point_lights = [
             PointLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]); MAX_POINT_LIGHTS as usize
         ];
-        point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 0.4]);
+        point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 1.0]);
 
         /*
         Create materials
         */
         let mut materials = [
-            Material::new(&texture_err, &texture_err, 0.0); MAX_MATERIALS as usize
+            Material::new(0, 0, 16.0); MAX_MATERIALS as usize
         ];
-        materials[1] = Material::new(&texture_wall, &texture_wall, 16.0);
-        materials[2] = Material::new(&texture_box, &texture_box, 16.0);
-        materials[3] = Material::new(&texture_metal_box, &specular_metal_box, 32.0);
+        materials[1] = Material::new(1, 1, 16.0);
+        materials[2] = Material::new(2, 2, 16.0);
+        materials[3] = Material::new(3, 4, 32.0);
 
-        let mut target = display.draw(); // Fetch the display
+        /*
+        Beginning buffer and uniform building
+        */
 
+        // Fetch reference to display
+        let mut target = display.draw(); 
+
+        // Compute model, view and perspective matrices
         let model = get_uniform(&[0.0, 0.0, 0.0], &[1.0, 1.0, 1.0], &[0.0, 0.0, 0.0]);
         let view = fps_camera.get_view_matrix();
         let perspective = get_perspective_matrix(&target);
         
+        // Create main vertex buffers
         let vertex_buffer = glium::VertexBuffer::new(&display, &shape.get_vertices()).unwrap();
         let normal_buffer = glium::VertexBuffer::new(&display, &shape.get_normals()).unwrap();
         let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
 
+        // Create vertex buffers for light cubes
         let lights_vertex_buffer = glium::VertexBuffer::new(&display, &light_cube.get_vertices()).unwrap();
         let lights_normal_buffer = glium::VertexBuffer::new(&display, &light_cube.get_normals()).unwrap();
 
-        // Build uniforms
+        // Build uniform
         let uniform = StdUniform {
             model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(),
-            materials: materials, num_directional_lights: 1,  directional_lights: directional_lights, num_point_lights: 1, point_lights: point_lights
+            textures: &textures, materials: materials, num_directional_lights: 1,  directional_lights: directional_lights,
+            num_point_lights: 1, point_lights: point_lights
         };
 
+        /*
+        Draw everything
+        */
         target.clear_color_and_depth((0.0, 0.0, 0.0, 1.0), 1.0); // Clear color and depth   
         target.draw((&vertex_buffer, &normal_buffer), &indices, &program, &uniform, &draw_parameters).unwrap();
         target.draw((&lights_vertex_buffer, &lights_normal_buffer), &indices, &program_lights, &uniform! {model: model, view: view, perspective: perspective}, &draw_parameters).unwrap();
         target.finish().unwrap();
 
         /*
-            Process events
+        Process events
         */
         let mut action = Action::Continue;
         let mut fullscreen_toggle_pressed: bool = false;
@@ -329,7 +185,7 @@ fn main() {
 
 fn build_scene() -> impl Shape3D {
     let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 2);
-    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 3);
+    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 2);
     let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 1);
 
     let mut scene: Vec<&dyn Shape3D> = Vec::new();
@@ -338,26 +194,6 @@ fn build_scene() -> impl Shape3D {
     scene.push(&quad);
     
     return combine_shapes(&scene);
-}
-
-fn load_texture(display: &glium::Display, bytes: &'static [u8], format: image::ImageFormat) -> SrgbTexture2d {
-    let image = image::load(Cursor::new(bytes), format).unwrap().to_rgba8();
-    let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    return glium::texture::SrgbTexture2d::new(display, image).unwrap();
-}
-
-fn load_texture_from_color(display: &glium::Display, color: [f32; 3]) -> SrgbTexture2d {
-    let (dim_x, dim_y) = (1, 1);
-    let mut image_buffer = image::ImageBuffer::<image::Rgba<u8>, _>::new(dim_x, dim_y);
-    for (x, y, pixel) in image_buffer.enumerate_pixels_mut() {
-        let r: u8 = (color[0]*255.0).floor() as u8;
-        let g: u8 = (color[1]*255.0).floor() as u8;
-        let b: u8 = (color[2]*255.0).floor() as u8;
-        *pixel = image::Rgba([r, g, b, 255 as u8]);
-    }
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image_buffer.into_raw(), (dim_x, dim_y));
-    return glium::texture::SrgbTexture2d::new(display, image).unwrap();
 }
 
 fn get_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {
@@ -401,7 +237,7 @@ fn get_perspective_matrix(target: &Frame) -> [[f32; 4]; 4] {
 
     let fov: f32 = 3.141592 / 3.0;
     let zfar = 1024.0;
-    let znear = 0.01; // Reduced from 0.1 to 0.01 to prevent visually clipping through walls
+    let znear = 0.01;
 
     let f = 1.0 / (fov / 2.0).tan();
     return [

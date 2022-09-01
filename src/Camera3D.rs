@@ -37,31 +37,6 @@ impl Camera {
         }
     }
 
-
-    pub fn set_moving_up(&mut self, value: bool) {
-        self.moving_up = value;
-    }
-
-    pub fn set_moving_down(&mut self, value: bool) {
-        self.moving_down = value;
-    }
-
-    pub fn set_moving_right(&mut self, value: bool) {
-        self.moving_right = value;
-    }
-
-    pub fn set_moving_left(&mut self, value: bool) {
-        self.moving_left = value;
-    }
-
-    pub fn set_moving_forward(&mut self, value: bool) {
-        self.moving_forward = value;
-    }
-
-    pub fn set_moving_backwards(&mut self, value: bool) {
-        self.moving_backwards = value;
-    }
-
     pub fn get_position(&self) -> [f32; 3] {
         return self.position;
     }
@@ -144,10 +119,8 @@ impl Camera {
             } else {
                 [movement[0]/len, movement[1]/len, movement[2]/len]
             }
-            
         };
         
-
         self.position[0] += movement[0] * self.move_speed;
         self.position[1] += movement[1] * self.move_speed;
         self.position[2] += movement[2] * self.move_speed;
