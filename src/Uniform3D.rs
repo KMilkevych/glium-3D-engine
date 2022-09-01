@@ -9,7 +9,6 @@ pub mod Uniforms {
 
     const MAX_SAMPLERS: i32 = 32;
 
-
     pub struct StdUniform<'a> {
         pub model: [[f32; 4]; 4],
         pub view: [[f32; 4]; 4],

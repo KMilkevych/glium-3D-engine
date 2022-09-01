@@ -1,5 +1,3 @@
-
-
 pub mod Lights {
 
     pub const MAX_DIRECTIONAL_LIGHTS: i32 = 4;

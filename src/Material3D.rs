@@ -1,6 +1,4 @@
-
 pub mod Material {
-    //use glium::texture::SrgbTexture2d;
 
     pub const MAX_MATERIALS: i32 = 32;
 
@@ -20,5 +18,4 @@ pub mod Material {
             }
         }
     }
-
 }
