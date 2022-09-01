@@ -92,6 +92,10 @@ fn main() {
         ];
         point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 1.0]);
 
+        let mut spot_lights = [
+            SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 1.5f32, [0.0, 1.0, 0.0]); MAX_SPOT_LIGHTS as usize
+        ];
+
         /*
         Create materials
         */
@@ -127,7 +131,7 @@ fn main() {
         let uniform = StdUniform {
             model: model, view: view, perspective: perspective, u_light: global_light, v_view: fps_camera.get_position(),
             textures: &textures, materials: materials, num_directional_lights: 1,  directional_lights: directional_lights,
-            num_point_lights: 1, point_lights: point_lights
+            num_point_lights: 1, point_lights: point_lights, num_spot_lights: 1, spot_lights: spot_lights
         };
 
         /*

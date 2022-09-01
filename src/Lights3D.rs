@@ -75,4 +75,27 @@ pub mod Lights {
             }
         }
     }
+
+    #[derive(Copy, Clone)]
+    pub struct SpotLight {
+        pub position: [f32; 3],
+        pub direction: [f32; 3],
+        pub cutoff: f32,
+        pub ambient_color: [f32; 3],
+        pub diffuse_color: [f32; 3],
+        pub specular_color: [f32; 3],
+    }
+
+    impl SpotLight {
+        pub fn new(position: [f32; 3], direction: [f32; 3], cutoff: f32, color: [f32; 3]) -> SpotLight{
+            return SpotLight { 
+                position: position,
+                direction: direction,
+                cutoff: cutoff,
+                ambient_color: [color[0]*AMBIENT_FACTOR, color[1]*AMBIENT_FACTOR, color[2]*AMBIENT_FACTOR],
+                diffuse_color: color,
+                specular_color: color,
+            }
+        }
+    }
 }

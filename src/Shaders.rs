@@ -62,6 +62,15 @@ pub const FRAGMENT_SHADER: &str = r#"
         vec3 specular_color;
     };
 
+    struct SpotLight {
+        vec3 position;
+        vec3 direction;
+        float cutoff;
+        vec3 ambient_color;
+        vec3 diffuse_color;
+        vec3 specular_color;
+    };
+
     in vec3 v_normal;
     in vec3 v_position;
     in vec2 v_texture;
@@ -80,6 +89,9 @@ pub const FRAGMENT_SHADER: &str = r#"
 
     uniform int num_point_lights;
     uniform PointLight point_lights[128];
+
+    uniform int num_spot_lights;
+    uniform SpotLight spot_lights[128];
 
     vec3 calc_dir_light(DirectionalLight light, vec3 normal, vec3 view_dir) {
         vec3 light_dir = normalize(-light.direction);
