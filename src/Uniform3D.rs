@@ -93,6 +93,10 @@ pub mod Uniforms {
                 f(&format!("spot_lights[{}].position",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].position));
                 f(&format!("spot_lights[{}].direction",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].direction));
                 f(&format!("spot_lights[{}].cutoff",i)[..], UniformValue::Float(self.spot_lights[i as usize].cutoff));
+                f(&format!("spot_lights[{}].outer_cutoff",i)[..], UniformValue::Float(self.spot_lights[i as usize].outer_cutoff));
+                f(&format!("spot_lights[{}].constant",i)[..], UniformValue::Float(self.spot_lights[i as usize].constant));
+                f(&format!("spot_lights[{}].linear",i)[..], UniformValue::Float(self.spot_lights[i as usize].linear));
+                f(&format!("spot_lights[{}].quadratic",i)[..], UniformValue::Float(self.spot_lights[i as usize].quadratic));
                 f(&format!("spot_lights[{}].ambient_color",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].ambient_color));
                 f(&format!("spot_lights[{}].diffuse_color",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].diffuse_color));
                 f(&format!("spot_lights[{}].specular_color",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].specular_color));

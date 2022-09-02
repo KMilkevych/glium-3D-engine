@@ -10,7 +10,6 @@ mod Shaders;
 extern crate glium;
 extern crate image;
 
-use glium::texture::{SrgbTexture2d, SrgbTexture2dArray, RawImage2d};
 use glium::{glutin, Surface, Frame};
 
 use crate::Base3D::General::*;
@@ -20,7 +19,6 @@ use crate::Uniform3D::Uniforms::StdUniform;
 use crate::Material3D::Material::*;
 use crate::GraphicsLoader2D::GraphicsLoader;
 
-use std::io::Cursor;
 
 enum Action {
     Stop,
@@ -85,16 +83,17 @@ fn main() {
         let mut directional_lights = [    
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]); MAX_DIRECTIONAL_LIGHTS as usize
         ];
-        directional_lights[0] = DirectionalLight::new([-1.0, -0.6, 0.0], [1.0, 0.2, 0.2]);
+        //directional_lights[0] = DirectionalLight::new([-1.0, -0.6, 0.0], [1.0, 0.2, 0.2]);
 
         let mut point_lights = [
             PointLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]); MAX_POINT_LIGHTS as usize
         ];
-        point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 1.0]);
+        //point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 1.0]);
 
         let mut spot_lights = [
-            SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 1.5f32, [0.0, 1.0, 0.0]); MAX_SPOT_LIGHTS as usize
+            SpotLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, [0.0, 1.0, 0.0]); MAX_SPOT_LIGHTS as usize
         ];
+        spot_lights[0] = SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 2.0f32, [0.0, 1.0, 0.0]);
 
         /*
         Create materials
@@ -189,7 +188,7 @@ fn main() {
 
 fn build_scene() -> impl Shape3D {
     let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 2);
-    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 2);
+    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 3);
     let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 1);
 
     let mut scene: Vec<&dyn Shape3D> = Vec::new();

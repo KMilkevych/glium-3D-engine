@@ -1,8 +1,8 @@
 pub mod Lights {
 
-    pub const MAX_DIRECTIONAL_LIGHTS: i32 = 4;
-    pub const MAX_POINT_LIGHTS: i32 = 128;
-    pub const MAX_SPOT_LIGHTS: i32 = 128;
+    pub const MAX_DIRECTIONAL_LIGHTS: i32 = 2;
+    pub const MAX_POINT_LIGHTS: i32 = 124;
+    pub const MAX_SPOT_LIGHTS: i32 = 2;
 
     const AMBIENT_FACTOR: f32 = 0.03;
 
@@ -81,6 +81,10 @@ pub mod Lights {
         pub position: [f32; 3],
         pub direction: [f32; 3],
         pub cutoff: f32,
+        pub outer_cutoff: f32,
+        pub constant: f32,
+        pub linear: f32,
+        pub quadratic: f32,
         pub ambient_color: [f32; 3],
         pub diffuse_color: [f32; 3],
         pub specular_color: [f32; 3],
@@ -91,7 +95,11 @@ pub mod Lights {
             return SpotLight { 
                 position: position,
                 direction: direction,
-                cutoff: cutoff,
+                cutoff: cutoff.to_radians().cos(),
+                outer_cutoff: (cutoff + 24.0f32).to_radians().cos(),
+                constant: 1.0,
+                linear: 0.14,
+                quadratic: 0.07,
                 ambient_color: [color[0]*AMBIENT_FACTOR, color[1]*AMBIENT_FACTOR, color[2]*AMBIENT_FACTOR],
                 diffuse_color: color,
                 specular_color: color,
