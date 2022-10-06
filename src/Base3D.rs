@@ -88,10 +88,8 @@ pub mod General {
     pub trait Shape3D {
         fn get_vertices(&self) -> Vec<Vertex>;
         fn get_normals(&self) -> Vec<Normal>;
-    }
 
-    impl dyn Shape3D {
-        pub fn rotate(&self, angle_XYZ: [f32; 3]) -> impl Shape3D {
+        fn rotate(&self, angle_XYZ: [f32; 3]) -> impl Shape3D {
 
             let mut vertices: Vec<Vertex> = Vec::new();
             let mut normals: Vec<Normal> = Vec::new();
@@ -111,7 +109,6 @@ pub mod General {
     
         }
     }
-
     pub struct AShape {
         pub vertices: Vec<Vertex>,
         pub normals: Vec<Normal>,

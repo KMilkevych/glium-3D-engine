@@ -55,7 +55,7 @@ fn main() {
     let light_cube = Cube::new([0.0, 0.3, 0.0], 0.1, 0);
 
     // Prepare a rotating "dynamic" cube
-    let mut dynamic_cube: Cube = Cube::new([0.0, 0.5, 0.0], 0.2, 2);
+    let mut dynamic_cube: Box<dyn Shape3D> = Box::new(Cube::new([0.0, 0.5, 0.0], 0.2, 2));
 
     // Describe global lighting
     let global_light: [f32; 3] = light_cube.center();
@@ -74,7 +74,8 @@ fn main() {
         /*
         Update all shapes / Game objects
         */
-        //dynamic_cube = dynamic_cube.rotate([0.0, 0.0, 0.0]);
+        let mut mcb: &mut dyn Shape3D = dynamic_cube.as_mut();
+        mcb = &dynamic_cube.rotate([0.0, 0.0, 0.0]);
 
         /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"
@@ -83,7 +84,7 @@ fn main() {
         
         let mut shapes: Vec<&dyn Shape3D> = Vec::new();
         shapes.push(&scene);
-        shapes.push(&dynamic_cube);
+        shapes.push(dynamic_cube.as_ref());
         let shape = combine_shapes(&shapes);
 
         /*
