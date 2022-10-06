@@ -74,8 +74,9 @@ fn main() {
         /*
         Update all shapes / Game objects
         */
-        let mut mcb: &mut dyn Shape3D = dynamic_cube.as_mut();
-        mcb = &dynamic_cube.rotate([0.0, 0.0, 0.0]);
+        //let mut mcb: &mut dyn Shape3D = dynamic_cube.as_mut();
+        //mcb = &dynamic_cube.rotate([0.0, 0.0, 0.0]);
+        dynamic_cube = dynamic_cube.rotate([0.01, 0.0, 0.0]);
 
         /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"

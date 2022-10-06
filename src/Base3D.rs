@@ -89,7 +89,7 @@ pub mod General {
         fn get_vertices(&self) -> Vec<Vertex>;
         fn get_normals(&self) -> Vec<Normal>;
 
-        fn rotate(&self, angle_XYZ: [f32; 3]) -> impl Shape3D {
+        fn rotate(&self, angle_XYZ: [f32; 3]) -> Box<dyn Shape3D> {
 
             let mut vertices: Vec<Vertex> = Vec::new();
             let mut normals: Vec<Normal> = Vec::new();
@@ -102,10 +102,10 @@ pub mod General {
                 normals.push(normal.rotate(angle_XYZ));
             }
     
-            return AShape {
+            return Box::new(AShape {
                 vertices: vertices,
                 normals: normals
-            }
+            });
     
         }
     }
