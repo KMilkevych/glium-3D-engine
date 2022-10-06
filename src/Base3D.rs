@@ -1,9 +1,57 @@
 pub mod General {
+
+    fn protate_X(p: [f32; 3], a: f32) -> [f32; 3] {
+        return [p[0], p[1]*a.cos() - p[2]*a.sin(), p[1]*a.sin() + p[2]*a.cos()];
+    }
+
+    fn protate_Y(p: [f32; 3], a: f32) -> [f32; 3] {
+        return [p[2]*a.sin() + p[0]*a.cos(), p[1], p[2]*a.cos() - p[0]*a.sin()];
+    }
+
+    fn protate_Z(p: [f32; 3], a: f32) -> [f32; 3] {
+        return [p[0]*a.cos() - p[1]*a.sin(), p[0]*a.sin() + p[1]*a.cos(), p[2]];
+    }
+
     #[derive(Copy, Clone)]
     pub struct Vertex {
         pub position: [f32; 3],
         pub texture: [f32; 2],
         pub material_id: i32,
+    }
+    
+    impl Vertex {
+        pub fn rotate_X(&self, angle: f32) -> Vertex {
+            return Vertex {
+                position: protate_X(self.position, angle),
+                texture: self.texture,
+                material_id: self.material_id
+            }
+        }
+
+        pub fn rotate_Y(&self, angle: f32) -> Vertex {
+            return Vertex {
+                position: protate_Y(self.position, angle),
+                texture: self.texture,
+                material_id: self.material_id
+            }
+        }
+
+        pub fn rotate_Z(&self, angle: f32) -> Vertex {
+            return Vertex {
+                position: protate_Z(self.position, angle),
+                texture: self.texture,
+                material_id: self.material_id
+            }
+        }
+
+        pub fn rotate(&self, angle_XYZ: [f32; 3]) -> Vertex {
+            return Vertex {
+                position: protate_Z(protate_Y(protate_X(self.position, angle_XYZ[0]), angle_XYZ[1]), angle_XYZ[2]),
+                texture: self.texture,
+                material_id: self.material_id
+            }
+        }
+
     }
     implement_vertex!(Vertex, position, texture, material_id);
 
@@ -24,6 +72,12 @@ pub mod General {
                     ],
             }
         }
+
+        pub fn rotate(&self, angle_XYZ: [f32; 3]) -> Normal {
+            return Normal {
+                normal: protate_Z(protate_Y(protate_X(self.normal, angle_XYZ[0]), angle_XYZ[1]), angle_XYZ[2]),
+            }
+        }
     }
     implement_vertex!(Normal, normal);
 
@@ -34,6 +88,28 @@ pub mod General {
     pub trait Shape3D {
         fn get_vertices(&self) -> Vec<Vertex>;
         fn get_normals(&self) -> Vec<Normal>;
+    }
+
+    impl dyn Shape3D {
+        pub fn rotate(&self, angle_XYZ: [f32; 3]) -> impl Shape3D {
+
+            let mut vertices: Vec<Vertex> = Vec::new();
+            let mut normals: Vec<Normal> = Vec::new();
+    
+            for vertex in self.get_vertices().iter() {
+                vertices.push(vertex.rotate(angle_XYZ));
+            }
+    
+            for normal in self.get_normals().iter() {
+                normals.push(normal.rotate(angle_XYZ));
+            }
+    
+            return AShape {
+                vertices: vertices,
+                normals: normals
+            }
+    
+        }
     }
 
     pub struct AShape {
@@ -48,29 +124,6 @@ pub mod General {
 
         fn get_normals(&self) -> Vec<Normal> {
             return self.normals.to_vec();
-        }
-    }
-
-    pub fn combine_shapes(shapes: &Vec<&dyn Shape3D>) -> impl Shape3D {
-
-        let mut vertices: Vec<Vertex> = Vec::new();
-        let mut normals: Vec<Normal> = Vec::new();
-
-        for i in 0..shapes.len() {
-            let shape: &dyn Shape3D = shapes[i];
-            let s_vertices = shape.get_vertices();
-            let s_normals = shape.get_normals();
-
-            for j in 0..s_vertices.len() {
-                vertices.push(s_vertices[j]);
-                normals.push(s_normals[j]);
-            }
-            
-        }
-
-        return AShape {
-            vertices: vertices,
-            normals: normals,
         }
     }
 
@@ -151,6 +204,29 @@ pub mod General {
 
         fn get_normals(&self) -> Vec<Normal> {
             return self.normals.to_vec();
+        }
+    }
+
+    pub fn combine_shapes(shapes: &Vec<&dyn Shape3D>) -> impl Shape3D {
+
+        let mut vertices: Vec<Vertex> = Vec::new();
+        let mut normals: Vec<Normal> = Vec::new();
+
+        for i in 0..shapes.len() {
+            let shape: &dyn Shape3D = shapes[i];
+            let s_vertices = shape.get_vertices();
+            let s_normals = shape.get_normals();
+
+            for j in 0..s_vertices.len() {
+                vertices.push(s_vertices[j]);
+                normals.push(s_normals[j]);
+            }
+            
+        }
+
+        return AShape {
+            vertices: vertices,
+            normals: normals,
         }
     }
 

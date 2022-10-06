@@ -61,45 +61,45 @@ pub mod Uniforms {
             f("textures", UniformValue::SrgbTexture2dArray(&self.textures, None));
 
             for i in 0..MAX_MATERIALS {
-                f(&format!("materials[{}].diffuse",i)[..], UniformValue::SignedInt(self.materials[i as usize].diffuse));
-                f(&format!("materials[{}].specular",i)[..], UniformValue::SignedInt(self.materials[i as usize].specular));
-                f(&format!("materials[{}].shininess",i)[..], UniformValue::Float(self.materials[i as usize].shininess));
+                f(&format!("materials[{}].diffuse",i), UniformValue::SignedInt(self.materials[i as usize].diffuse));
+                f(&format!("materials[{}].specular",i), UniformValue::SignedInt(self.materials[i as usize].specular));
+                f(&format!("materials[{}].shininess",i), UniformValue::Float(self.materials[i as usize].shininess));
             }
 
             f("num_directional_lights", UniformValue::SignedInt(self.num_directional_lights));
 
             for i in 0..MAX_DIRECTIONAL_LIGHTS {
-                f(&format!("directional_lights[{}].direction",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].direction));
-                f(&format!("directional_lights[{}].ambient_color",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].ambient_color));
-                f(&format!("directional_lights[{}].diffuse_color",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].diffuse_color));
-                f(&format!("directional_lights[{}].specular_color",i)[..], UniformValue::Vec3(self.directional_lights[i as usize].specular_color));
+                f(&format!("directional_lights[{}].direction",i), UniformValue::Vec3(self.directional_lights[i as usize].direction));
+                f(&format!("directional_lights[{}].ambient_color",i), UniformValue::Vec3(self.directional_lights[i as usize].ambient_color));
+                f(&format!("directional_lights[{}].diffuse_color",i), UniformValue::Vec3(self.directional_lights[i as usize].diffuse_color));
+                f(&format!("directional_lights[{}].specular_color",i), UniformValue::Vec3(self.directional_lights[i as usize].specular_color));
             }
 
             f("num_point_lights", UniformValue::SignedInt(self.num_point_lights));
 
             for i in 0..MAX_POINT_LIGHTS {
-                f(&format!("point_lights[{}].position",i)[..], UniformValue::Vec3(self.point_lights[i as usize].position));
-                f(&format!("point_lights[{}].constant",i)[..], UniformValue::Float(self.point_lights[i as usize].constant));
-                f(&format!("point_lights[{}].linear",i)[..], UniformValue::Float(self.point_lights[i as usize].linear));
-                f(&format!("point_lights[{}].quadratic",i)[..], UniformValue::Float(self.point_lights[i as usize].quadratic));
-                f(&format!("point_lights[{}].ambient_color",i)[..], UniformValue::Vec3(self.point_lights[i as usize].ambient_color));
-                f(&format!("point_lights[{}].diffuse_color",i)[..], UniformValue::Vec3(self.point_lights[i as usize].diffuse_color));
-                f(&format!("point_lights[{}].specular_color",i)[..], UniformValue::Vec3(self.point_lights[i as usize].specular_color));
+                f(&format!("point_lights[{}].position",i), UniformValue::Vec3(self.point_lights[i as usize].position));
+                f(&format!("point_lights[{}].constant",i), UniformValue::Float(self.point_lights[i as usize].constant));
+                f(&format!("point_lights[{}].linear",i), UniformValue::Float(self.point_lights[i as usize].linear));
+                f(&format!("point_lights[{}].quadratic",i), UniformValue::Float(self.point_lights[i as usize].quadratic));
+                f(&format!("point_lights[{}].ambient_color",i), UniformValue::Vec3(self.point_lights[i as usize].ambient_color));
+                f(&format!("point_lights[{}].diffuse_color",i), UniformValue::Vec3(self.point_lights[i as usize].diffuse_color));
+                f(&format!("point_lights[{}].specular_color",i), UniformValue::Vec3(self.point_lights[i as usize].specular_color));
             }
 
             f("num_spot_lights", UniformValue::SignedInt(self.num_spot_lights));
 
             for i in 0..MAX_SPOT_LIGHTS {
-                f(&format!("spot_lights[{}].position",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].position));
-                f(&format!("spot_lights[{}].direction",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].direction));
-                f(&format!("spot_lights[{}].cutoff",i)[..], UniformValue::Float(self.spot_lights[i as usize].cutoff));
-                f(&format!("spot_lights[{}].outer_cutoff",i)[..], UniformValue::Float(self.spot_lights[i as usize].outer_cutoff));
-                f(&format!("spot_lights[{}].constant",i)[..], UniformValue::Float(self.spot_lights[i as usize].constant));
-                f(&format!("spot_lights[{}].linear",i)[..], UniformValue::Float(self.spot_lights[i as usize].linear));
-                f(&format!("spot_lights[{}].quadratic",i)[..], UniformValue::Float(self.spot_lights[i as usize].quadratic));
-                f(&format!("spot_lights[{}].ambient_color",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].ambient_color));
-                f(&format!("spot_lights[{}].diffuse_color",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].diffuse_color));
-                f(&format!("spot_lights[{}].specular_color",i)[..], UniformValue::Vec3(self.spot_lights[i as usize].specular_color));
+                f(&format!("spot_lights[{}].position",i), UniformValue::Vec3(self.spot_lights[i as usize].position));
+                f(&format!("spot_lights[{}].direction",i), UniformValue::Vec3(self.spot_lights[i as usize].direction));
+                f(&format!("spot_lights[{}].cutoff",i), UniformValue::Float(self.spot_lights[i as usize].cutoff));
+                f(&format!("spot_lights[{}].outer_cutoff",i), UniformValue::Float(self.spot_lights[i as usize].outer_cutoff));
+                f(&format!("spot_lights[{}].constant",i), UniformValue::Float(self.spot_lights[i as usize].constant));
+                f(&format!("spot_lights[{}].linear",i), UniformValue::Float(self.spot_lights[i as usize].linear));
+                f(&format!("spot_lights[{}].quadratic",i), UniformValue::Float(self.spot_lights[i as usize].quadratic));
+                f(&format!("spot_lights[{}].ambient_color",i), UniformValue::Vec3(self.spot_lights[i as usize].ambient_color));
+                f(&format!("spot_lights[{}].diffuse_color",i), UniformValue::Vec3(self.spot_lights[i as usize].diffuse_color));
+                f(&format!("spot_lights[{}].specular_color",i), UniformValue::Vec3(self.spot_lights[i as usize].specular_color));
             }
         }
     }
