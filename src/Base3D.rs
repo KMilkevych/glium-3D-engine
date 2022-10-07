@@ -12,6 +12,10 @@ pub mod General {
         return [p[0]*a.cos() - p[1]*a.sin(), p[0]*a.sin() + p[1]*a.cos(), p[2]];
     }
 
+    fn ptranslate(p: [f32; 3], relative_XYZ: [f32; 3]) -> [f32; 3] {
+        return [p[0] + relative_XYZ[0], p[1] + relative_XYZ[1], p[2] + relative_XYZ[2]];
+    }
+
     #[derive(Copy, Clone)]
     pub struct Vertex {
         pub position: [f32; 3],
@@ -20,6 +24,7 @@ pub mod General {
     }
     
     impl Vertex {
+        /*
         pub fn rotate_X(&self, angle: f32) -> Vertex {
             return Vertex {
                 position: protate_X(self.position, angle),
@@ -43,10 +48,19 @@ pub mod General {
                 material_id: self.material_id
             }
         }
+        */
 
         pub fn rotate(&self, angle_XYZ: [f32; 3]) -> Vertex {
             return Vertex {
                 position: protate_Z(protate_Y(protate_X(self.position, angle_XYZ[0]), angle_XYZ[1]), angle_XYZ[2]),
+                texture: self.texture,
+                material_id: self.material_id
+            }
+        }
+
+        pub fn translate(&self, relative_XYZ: [f32; 3]) -> Vertex {
+            return Vertex {
+                position: ptranslate(self.position, relative_XYZ),
                 texture: self.texture,
                 material_id: self.material_id
             }
@@ -78,6 +92,12 @@ pub mod General {
                 normal: protate_Z(protate_Y(protate_X(self.normal, angle_XYZ[0]), angle_XYZ[1]), angle_XYZ[2]),
             }
         }
+
+        pub fn translate(&self, relative_XYZ: [f32; 3]) -> Normal {
+            return Normal {
+                normal: ptranslate(self.normal, relative_XYZ),
+            }
+        }
     }
     implement_vertex!(Normal, normal);
 
@@ -106,7 +126,45 @@ pub mod General {
                 vertices: vertices,
                 normals: normals
             });
+        }
+
+        fn rotate_O(&self, angle_XYZ: [f32; 3]) -> Box<dyn Shape3D> {
+            let origin: [f32; 3] = self.centroid();
+
+            let mut vertices: Vec<Vertex> = Vec::new();
+            let mut normals: Vec<Normal> = Vec::new();
     
+            for vertex in self.get_vertices().iter() {
+                let v: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
+                let v: Vertex = v.rotate(angle_XYZ);
+                let v: Vertex = v.translate(origin);
+                vertices.push(v);
+            }
+    
+            for normal in self.get_normals().iter() {
+                //let n: Normal = normal.translate([-origin[0], -origin[1], -origin[2]]);
+                //let n: Normal = n.rotate(angle_XYZ);
+                //let n: Normal = n.translate(origin);
+                let n: Normal = normal.rotate(angle_XYZ);
+                normals.push(n);
+            }
+    
+            return Box::new(AShape {
+                vertices: vertices,
+                normals: normals
+            });
+        }
+
+        fn centroid(&self) -> [f32; 3] {
+            let vertices = self.get_vertices();
+            let n = vertices.len();
+            let mut sum: [f32; 3] = [0.0; 3];
+            for vertex in vertices {
+                for i in 0..3 {
+                    sum[i] += vertex.position[i];
+                }
+            }
+            return [sum[0]/(n as f32), sum[1]/(n as f32), sum[2]/(n as f32)];
         }
     }
     pub struct AShape {

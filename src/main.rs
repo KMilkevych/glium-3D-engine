@@ -76,7 +76,7 @@ fn main() {
         */
         //let mut mcb: &mut dyn Shape3D = dynamic_cube.as_mut();
         //mcb = &dynamic_cube.rotate([0.0, 0.0, 0.0]);
-        dynamic_cube = dynamic_cube.rotate([0.01, 0.0, 0.0]);
+        dynamic_cube = dynamic_cube.rotate_O([0.01, 0.02, 0.0]);
 
         /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"
@@ -99,12 +99,12 @@ fn main() {
         let mut point_lights = [
             PointLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]); MAX_POINT_LIGHTS as usize
         ];
-        //point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 1.0]);
+        point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 1.0]);
 
         let mut spot_lights = [
             SpotLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, [0.0, 1.0, 0.0]); MAX_SPOT_LIGHTS as usize
         ];
-        spot_lights[0] = SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 2.0f32, [0.0, 1.0, 0.0]);
+        //spot_lights[0] = SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 2.0f32, [0.0, 1.0, 0.0]);
 
         /*
         Create materials
