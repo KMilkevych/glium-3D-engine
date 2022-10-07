@@ -142,9 +142,7 @@ pub mod General {
             }
     
             for normal in self.get_normals().iter() {
-                //let n: Normal = normal.translate([-origin[0], -origin[1], -origin[2]]);
-                //let n: Normal = n.rotate(angle_XYZ);
-                //let n: Normal = n.translate(origin);
+                // Don't translate normals
                 let n: Normal = normal.rotate(angle_XYZ);
                 normals.push(n);
             }
@@ -156,16 +154,17 @@ pub mod General {
         }
 
         fn centroid(&self) -> [f32; 3] {
-            let vertices = self.get_vertices();
-            let n = vertices.len();
+            let mut n: i32 = 0;
             let mut sum: [f32; 3] = [0.0; 3];
-            for vertex in vertices {
+            for vertex in self.get_vertices() {
                 for i in 0..3 {
                     sum[i] += vertex.position[i];
                 }
+                n += 1;
             }
             return [sum[0]/(n as f32), sum[1]/(n as f32), sum[2]/(n as f32)];
         }
+
     }
     pub struct AShape {
         pub vertices: Vec<Vertex>,
