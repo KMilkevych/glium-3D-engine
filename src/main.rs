@@ -26,7 +26,6 @@ enum Action {
 }
 
 
-
 /**
  * Defining camera move and rotate speed
  */
@@ -51,11 +50,11 @@ fn main() {
     let mut fps_camera = Camera::new([0.0, 0.0, -1.0], [0.0, 1.0, 0.0], 0.0, 90.0, CAMERA_MOVE_SPEED, CAMERA_ROTATE_SPEED);
 
     // Prepare static scene
-    let scene = build_scene();
-    let light_cube = Cube::new([0.0, 0.3, 0.0], 0.1, 0);
+    let scene: AShape = build_scene();
+    let light_cube: AShape = Cube::new([0.0, 0.3, 0.0], 0.1, 0);
 
     // Prepare a rotating "dynamic" cube
-    let mut dynamic_cube: Box<dyn Shape3D> = Box::new(Cube::new([0.0, 0.5, 0.0], 0.2, 2));
+    let mut dynamic_cube: AShape = Cube::new([0.0, 0.5, 0.0], 0.2, 2);
 
     // Describe global lighting
     let global_light: [f32; 3] = light_cube.centroid();
@@ -76,21 +75,18 @@ fn main() {
         /*
         Update all shapes / Game objects
         */
-        //let mut mcb: &mut dyn Shape3D = dynamic_cube.as_mut();
-        //mcb = &dynamic_cube.rotate([0.0, 0.0, 0.0]);
-        dynamic_cube = dynamic_cube.rotate_O([0.01, 0.02, 0.0]);
+        dynamic_cube = dynamic_cube.rotate_O([0.01, 0.02, 0.03]);
+        let scaled_dynamic_cube = dynamic_cube.scale_O((t*0.08).sin()*1.5f32);
 
         /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"
         to later place into single vertex buffer
         */
         
-        let mut shapes: Vec<&dyn Shape3D> = Vec::new();
+        let mut shapes: Vec<&AShape> = Vec::new();
         shapes.push(&scene);
-        let scene_rotated = scene.rotate_O([0.0, 0.01 * t, 0.0]);
-        //shapes.push(scene_rotated.as_ref());
-        shapes.push(dynamic_cube.as_ref());
-        let shape = combine_shapes(&shapes);
+        shapes.push(&scaled_dynamic_cube);
+        let shape = combine_shapes(shapes);
 
         /*
         Create Directional and Point lights
@@ -201,17 +197,17 @@ fn main() {
     });
 }
 
-fn build_scene() -> impl Shape3D {
+fn build_scene() -> AShape{
     let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 2);
     let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 3);
     let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 1);
 
-    let mut scene: Vec<&dyn Shape3D> = Vec::new();
+    let mut scene: Vec<&AShape> = Vec::new();
     scene.push(&cube1);
     scene.push(&cube2);
     scene.push(&quad);
     
-    return combine_shapes(&scene);
+    return combine_shapes(scene);
 }
 
 fn get_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {

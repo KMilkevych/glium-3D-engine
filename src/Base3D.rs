@@ -16,6 +16,10 @@ pub mod General {
         return [p[0] + relative_XYZ[0], p[1] + relative_XYZ[1], p[2] + relative_XYZ[2]];
     }
 
+    fn pscale(p: [f32; 3], factor: f32) -> [f32; 3] {
+        return [p[0]*factor, p[1]*factor, p[2]*factor];
+    }
+
     #[derive(Copy, Clone)]
     pub struct Vertex {
         pub position: [f32; 3],
@@ -66,6 +70,14 @@ pub mod General {
             }
         }
 
+        pub fn scale(&self, factor: f32) -> Vertex {
+            return Vertex {
+                position: pscale(self.position, factor),
+                texture: self.texture,
+                material_id: self.material_id
+            }
+        }
+
     }
     implement_vertex!(Vertex, position, texture, material_id);
 
@@ -93,23 +105,21 @@ pub mod General {
             }
         }
 
-        pub fn translate(&self, relative_XYZ: [f32; 3]) -> Normal {
-            return Normal {
-                normal: ptranslate(self.normal, relative_XYZ),
-            }
-        }
+        /*
+        Translation and Scaling of normals should not be needed,
+        and will usually cause unintented behavior.
+        */
     }
     implement_vertex!(Normal, normal);
 
     /*
      * General shapes 
      */
-
     pub trait Shape3D {
         fn get_vertices(&self) -> Vec<Vertex>;
         fn get_normals(&self) -> Vec<Normal>;
 
-        fn rotate(&self, angle_XYZ: [f32; 3]) -> Box<dyn Shape3D> {
+        fn rotate(&self, angle_XYZ: [f32; 3]) -> AShape {
 
             let mut vertices: Vec<Vertex> = Vec::new();
             let mut normals: Vec<Normal> = Vec::new();
@@ -122,13 +132,13 @@ pub mod General {
                 normals.push(normal.rotate(angle_XYZ));
             }
     
-            return Box::new(AShape {
+            return AShape {
                 vertices: vertices,
                 normals: normals
-            });
+            };
         }
 
-        fn rotate_O(&self, angle_XYZ: [f32; 3]) -> Box<dyn Shape3D> {
+        fn rotate_O(&self, angle_XYZ: [f32; 3]) -> AShape {
             let origin: [f32; 3] = self.centroid();
 
             let mut vertices: Vec<Vertex> = Vec::new();
@@ -147,10 +157,41 @@ pub mod General {
                 normals.push(n);
             }
     
-            return Box::new(AShape {
+            return AShape {
                 vertices: vertices,
                 normals: normals
-            });
+            };
+        }
+
+        fn translate(&self, relative_XYZ: [f32; 3]) -> AShape {
+            let mut vertices: Vec<Vertex> = Vec::new();
+    
+            for vertex in self.get_vertices().iter() {
+                let v: Vertex = vertex.translate(relative_XYZ);
+                vertices.push(v);
+            }
+    
+            return AShape {
+                vertices: vertices,
+                normals: self.get_normals()
+            };
+        }
+
+        fn scale_O(&self, factor: f32) -> AShape {
+            let origin: [f32; 3] = self.centroid();
+            let mut vertices: Vec<Vertex> = Vec::new();
+    
+            for vertex in self.get_vertices().iter() {
+                let v: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
+                let v: Vertex = v.scale(factor);
+                let v: Vertex = v.translate(origin);
+                vertices.push(v);
+            }
+
+            return AShape {
+                vertices: vertices,
+                normals: self.get_normals()
+            };
         }
 
         fn centroid(&self) -> [f32; 3] {
@@ -166,6 +207,8 @@ pub mod General {
         }
 
     }
+
+    #[derive(Clone)]
     pub struct AShape {
         pub vertices: Vec<Vertex>,
         pub normals: Vec<Normal>,
@@ -227,15 +270,15 @@ pub mod General {
             let sl = side_length;
             let bfl = bottom_front_left;
 
-            let top =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]], material_id); // Top
-            let bottom =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]], material_id); // Bottom
-            let front =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Front
-            let rear =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Rear
-            let left =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
-            let right =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
+            let top: AShape =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]], material_id); // Top
+            let bottom: AShape =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]], material_id); // Bottom
+            let front: AShape =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Front
+            let rear: AShape =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Rear
+            let left: AShape =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
+            let right: AShape =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
 
-            let quads: Vec<&dyn Shape3D> = vec! [&top, &bottom, &front, &rear, &left, &right];
-            let cube = combine_shapes(&quads);
+            let quads: Vec<&AShape> = vec! [&top, &bottom, &front, &rear, &left, &right];
+            let cube = combine_shapes(quads);
 
             return AShape {
                 vertices: cube.get_vertices(),
@@ -254,13 +297,13 @@ pub mod General {
         }
     }
 
-    pub fn combine_shapes(shapes: &Vec<&dyn Shape3D>) -> impl Shape3D {
+    pub fn combine_shapes(shapes: Vec<&AShape>) -> AShape {
 
         let mut vertices: Vec<Vertex> = Vec::new();
         let mut normals: Vec<Normal> = Vec::new();
 
         for i in 0..shapes.len() {
-            let shape: &dyn Shape3D = shapes[i];
+            let shape: &AShape = shapes[i];
             let s_vertices = shape.get_vertices();
             let s_normals = shape.get_normals();
 
