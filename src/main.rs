@@ -58,7 +58,7 @@ fn main() {
     let mut dynamic_cube: Box<dyn Shape3D> = Box::new(Cube::new([0.0, 0.5, 0.0], 0.2, 2));
 
     // Describe global lighting
-    let global_light: [f32; 3] = light_cube.center();
+    let global_light: [f32; 3] = light_cube.centroid();
 
     // Run event loop
     let mut t: f32 = 0.0;
@@ -103,7 +103,7 @@ fn main() {
         let mut point_lights = [
             PointLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]); MAX_POINT_LIGHTS as usize
         ];
-        point_lights[0] = PointLight::new(light_cube.center(), [1.0, 1.0, 1.0]);
+        point_lights[0] = PointLight::new(light_cube.centroid(), [1.0, 1.0, 1.0]);
 
         let mut spot_lights = [
             SpotLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, [0.0, 1.0, 0.0]); MAX_SPOT_LIGHTS as usize

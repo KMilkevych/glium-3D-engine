@@ -187,11 +187,11 @@ pub mod General {
     }
 
     impl Quad {
-        pub fn new(bottom_left: [f32; 3], plane: [[f32; 3]; 2], material_id: i32) -> Quad {
+        pub fn new(bottom_left: [f32; 3], plane: [[f32; 3]; 2], material_id: i32) -> AShape {
             let bl = bottom_left;
             let rv = plane[0];
             let lv = plane[1];
-            return Quad {
+            return AShape {
                 vertices: vec![
                     Vertex {position: [bl[0],                   bl[1],                  bl[2]],                     texture: [0.0, 0.0], material_id},
                     Vertex {position: [bl[0] + rv[0],           bl[1] + rv[1],          bl[2] + rv[2]],             texture: [1.0, 0.0], material_id},
@@ -219,11 +219,10 @@ pub mod General {
     pub struct Cube {
         pub vertices: Vec<Vertex>,
         pub normals: Vec<Normal>,
-        center: [f32; 3],
     }
 
     impl Cube {
-        pub fn new(bottom_front_left: [f32; 3], side_length: f32, material_id: i32) -> Cube {
+        pub fn new(bottom_front_left: [f32; 3], side_length: f32, material_id: i32) -> AShape {
 
             let sl = side_length;
             let bfl = bottom_front_left;
@@ -238,16 +237,10 @@ pub mod General {
             let quads: Vec<&dyn Shape3D> = vec! [&top, &bottom, &front, &rear, &left, &right];
             let cube = combine_shapes(&quads);
 
-            return Cube {
+            return AShape {
                 vertices: cube.get_vertices(),
                 normals: cube.get_normals(),
-                center: [bfl[0] + sl/2.0, bfl[1] + sl/2.0, bfl[2] + sl/2.0],
             }
-
-        }
-
-        pub fn center(&self) -> [f32; 3] {
-            return self.center;
         }
     }
 
