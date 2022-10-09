@@ -28,31 +28,6 @@ pub mod General {
     }
     
     impl Vertex {
-        /*
-        pub fn rotate_X(&self, angle: f32) -> Vertex {
-            return Vertex {
-                position: protate_X(self.position, angle),
-                texture: self.texture,
-                material_id: self.material_id
-            }
-        }
-
-        pub fn rotate_Y(&self, angle: f32) -> Vertex {
-            return Vertex {
-                position: protate_Y(self.position, angle),
-                texture: self.texture,
-                material_id: self.material_id
-            }
-        }
-
-        pub fn rotate_Z(&self, angle: f32) -> Vertex {
-            return Vertex {
-                position: protate_Z(self.position, angle),
-                texture: self.texture,
-                material_id: self.material_id
-            }
-        }
-        */
 
         pub fn rotate(&self, angle_XYZ: [f32; 3]) -> Vertex {
             return Vertex {
@@ -116,10 +91,10 @@ pub mod General {
      * General shapes 
      */
     pub trait Shape3D {
-        fn get_vertices(&self) -> Vec<Vertex>;
-        fn get_normals(&self) -> Vec<Normal>;
+        fn get_vertices(&mut self) -> &mut Vec<Vertex>;
+        fn get_normals(&mut self) -> &mut Vec<Normal>;
 
-        fn rotate(&self, angle_XYZ: [f32; 3]) -> AShape {
+        fn rotate(&mut self, angle_XYZ: [f32; 3]) -> AShape {
 
             let mut vertices: Vec<Vertex> = Vec::new();
             let mut normals: Vec<Normal> = Vec::new();
@@ -138,7 +113,7 @@ pub mod General {
             };
         }
 
-        fn rotate_O(&self, angle_XYZ: [f32; 3]) -> AShape {
+        fn rotate_O(&mut self, angle_XYZ: [f32; 3]) -> AShape {
             let origin: [f32; 3] = self.centroid();
 
             let mut vertices: Vec<Vertex> = Vec::new();
@@ -163,7 +138,7 @@ pub mod General {
             };
         }
 
-        fn translate(&self, relative_XYZ: [f32; 3]) -> AShape {
+        fn translate(&mut self, relative_XYZ: [f32; 3]) -> AShape {
             let mut vertices: Vec<Vertex> = Vec::new();
     
             for vertex in self.get_vertices().iter() {
@@ -173,11 +148,11 @@ pub mod General {
     
             return AShape {
                 vertices: vertices,
-                normals: self.get_normals()
+                normals: self.get_normals().to_vec()
             };
         }
 
-        fn scale_O(&self, factor: f32) -> AShape {
+        fn scale_O(&mut self, factor: f32) -> AShape {
             let origin: [f32; 3] = self.centroid();
             let mut vertices: Vec<Vertex> = Vec::new();
     
@@ -189,12 +164,12 @@ pub mod General {
             }
 
             return AShape {
-                vertices: vertices,
-                normals: self.get_normals()
+                vertices: vertices.to_vec(),
+                normals: self.get_normals().to_vec()
             };
         }
 
-        fn centroid(&self) -> [f32; 3] {
+        fn centroid(&mut self) -> [f32; 3] {
             let mut n: i32 = 0;
             let mut sum: [f32; 3] = [0.0; 3];
             for vertex in self.get_vertices() {
@@ -215,12 +190,12 @@ pub mod General {
     }
 
     impl Shape3D for AShape {
-        fn get_vertices(&self) -> Vec<Vertex> {
-            return self.vertices.to_vec();
+        fn get_vertices(&mut self) -> &mut Vec<Vertex> {
+            return &mut self.vertices;
         }
 
-        fn get_normals(&self) -> Vec<Normal> {
-            return self.normals.to_vec();
+        fn get_normals(&mut self) -> &mut Vec<Normal> {
+            return &mut self.normals;
         }
     }
 
@@ -250,12 +225,12 @@ pub mod General {
     }
 
     impl Shape3D for Quad {
-        fn get_vertices(&self) -> Vec<Vertex> {
-            return self.vertices.to_vec();
+        fn get_vertices(&mut self) -> &mut Vec<Vertex> {
+            return &mut self.vertices;
         }
 
-        fn get_normals(&self) -> Vec<Normal> {
-            return self.normals.to_vec();
+        fn get_normals(&mut self) -> &mut Vec<Normal> {
+            return &mut self.normals;
         }
     }
 
@@ -270,46 +245,44 @@ pub mod General {
             let sl = side_length;
             let bfl = bottom_front_left;
 
-            let top: AShape =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]], material_id); // Top
-            let bottom: AShape =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]], material_id); // Bottom
-            let front: AShape =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Front
-            let rear: AShape =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Rear
-            let left: AShape =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
-            let right: AShape =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
+            let mut top: AShape =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]], material_id); // Top
+            let mut bottom: AShape =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]], material_id); // Bottom
+            let mut front: AShape =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Front
+            let mut rear: AShape =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Rear
+            let mut left: AShape =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
+            let mut right: AShape =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
 
-            let quads: Vec<&AShape> = vec! [&top, &bottom, &front, &rear, &left, &right];
-            let cube = combine_shapes(quads);
+            let quads: Vec<&mut AShape> = vec! [&mut top, &mut bottom, &mut front, &mut rear, &mut left, &mut right];
+            let mut cube = combine_shapes(quads);
 
             return AShape {
-                vertices: cube.get_vertices(),
-                normals: cube.get_normals(),
+                vertices: cube.get_vertices().to_owned(),
+                normals: cube.get_normals().to_owned(),
             }
         }
     }
 
     impl Shape3D for Cube {
-        fn get_vertices(&self) -> Vec<Vertex> {
-            return self.vertices.to_vec();
+        fn get_vertices(&mut self) -> &mut Vec<Vertex> {
+            return &mut self.vertices;
         }
 
-        fn get_normals(&self) -> Vec<Normal> {
-            return self.normals.to_vec();
+        fn get_normals(&mut self) -> &mut Vec<Normal> {
+            return &mut self.normals;
         }
     }
 
-    pub fn combine_shapes(shapes: Vec<&AShape>) -> AShape {
+    pub fn combine_shapes(mut shapes: Vec<&mut AShape>) -> AShape {
 
         let mut vertices: Vec<Vertex> = Vec::new();
         let mut normals: Vec<Normal> = Vec::new();
 
         for i in 0..shapes.len() {
-            let shape: &AShape = shapes[i];
-            let s_vertices = shape.get_vertices();
-            let s_normals = shape.get_normals();
-
-            for j in 0..s_vertices.len() {
-                vertices.push(s_vertices[j]);
-                normals.push(s_normals[j]);
+            let mut shape: &mut AShape = shapes[i];
+            
+            for j in 0..shape.get_vertices().len() {
+                vertices.push((shape.get_vertices()[j]).clone());
+                normals.push((shape.get_normals()[j]).clone());
             }
             
         }

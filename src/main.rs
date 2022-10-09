@@ -50,8 +50,8 @@ fn main() {
     let mut fps_camera = Camera::new([0.0, 0.0, -1.0], [0.0, 1.0, 0.0], 0.0, 90.0, CAMERA_MOVE_SPEED, CAMERA_ROTATE_SPEED);
 
     // Prepare static scene
-    let scene: AShape = build_scene();
-    let light_cube: AShape = Cube::new([0.0, 0.3, 0.0], 0.1, 0);
+    let mut scene: AShape = build_scene();
+    let mut light_cube: AShape = Cube::new([0.0, 0.3, 0.0], 0.1, 0);
 
     // Prepare a rotating "dynamic" cube
     let mut dynamic_cube: AShape = Cube::new([0.0, 0.5, 0.0], 0.2, 2);
@@ -88,23 +88,23 @@ fn main() {
         Update all shapes / Game objects
         */
         dynamic_cube = dynamic_cube.rotate_O([0.01, 0.02, 0.03]);
-        let scaled_dynamic_cube = dynamic_cube.scale_O((t*0.08).sin()*1.5f32);
-        //let rotated_cubes = (0..many_cubes.len()).map(|i| -> AShape {many_cubes[i].rotate_O([0.01*t, 0.02*t, 0.03*t])}).collect::<Vec<AShape>>();
+        let mut scaled_dynamic_cube = dynamic_cube.scale_O((t*0.08).sin()*1.5f32);
+        let rotated_cubes = (0..many_cubes.len()).map(|i| -> AShape {many_cubes[i].rotate_O([0.01*t, 0.02*t, 0.03*t])}).collect::<Vec<AShape>>();
 
         /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"
         to later place into single vertex buffer
         */
         
-        let mut shapes: Vec<&AShape> = Vec::new();
-        shapes.push(&scene);
-        shapes.push(&scaled_dynamic_cube);
-        /*
+        let mut shapes: Vec<&mut AShape> = Vec::new();
+        shapes.push(&mut scene);
+        shapes.push(&mut scaled_dynamic_cube);
+        
         for i in 0..rotated_cubes.len() {
-            shapes.push(&rotated_cubes[i]);
+            shapes.push(&mut rotated_cubes[i]);
         }
-        */
-        let shape = combine_shapes(shapes);
+        
+        let mut shape = combine_shapes(shapes);
 
         /*
         Create Directional and Point lights
@@ -223,14 +223,14 @@ fn main() {
 }
 
 fn build_scene() -> AShape{
-    let cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 2);
-    let cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 3);
-    let quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 1);
+    let mut cube1 = Cube::new([-0.5, -0.2, -0.2], 0.4, 2);
+    let mut cube2 = Cube::new([0.1, -0.2, -0.2], 0.4, 3);
+    let mut quad = Quad::new([-1.0, -0.2, -1.0], [[2.0, 0.0, 0.0], [0.0, 0.0, 2.0]], 1);
 
-    let mut scene: Vec<&AShape> = Vec::new();
-    scene.push(&cube1);
-    scene.push(&cube2);
-    scene.push(&quad);
+    let mut scene: Vec<&mut AShape> = Vec::new();
+    scene.push(&mut cube1);
+    scene.push(&mut cube2);
+    scene.push(&mut quad);
     
     return combine_shapes(scene);
 }
