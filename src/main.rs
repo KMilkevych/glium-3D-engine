@@ -86,9 +86,9 @@ fn main() {
         */
         
         let mut shapes: Vec<&dyn Shape3D> = Vec::new();
-        //shapes.push(&scene);
+        shapes.push(&scene);
         let scene_rotated = scene.rotate_O([0.0, 0.01 * t, 0.0]);
-        shapes.push(scene_rotated.as_ref());
+        //shapes.push(scene_rotated.as_ref());
         shapes.push(dynamic_cube.as_ref());
         let shape = combine_shapes(&shapes);
 
