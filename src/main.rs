@@ -56,11 +56,23 @@ fn main() {
     // Prepare a rotating "dynamic" cube
     let mut dynamic_cube: AShape = Cube::new([0.0, 0.5, 0.0], 0.2, 2);
 
+    // Try out many cubes
+    let mut many_cubes: Vec<AShape> = Vec::new();
+    let x_count = 32;
+    let y_count = 32;
+    for i in 0..x_count {
+        for j in 0..y_count {
+            let mut cube = Cube::new([(i as f32 - x_count as f32/2f32)*0.1f32, 0.8f32, (j as f32 - y_count as f32/2f32)*0.1f32 ], 0.09f32, 1);
+            many_cubes.push(cube);
+        }
+    }
+
     // Describe global lighting
     let global_light: [f32; 3] = light_cube.centroid();
 
     // Run event loop
     let mut t: f32 = 0.0;
+    let mut last_dt = std::time::Instant::now();
     start_loop(event_loop, move |events| {
 
         t += 0.1; // Artifact, should be replaced by proper code
@@ -77,6 +89,7 @@ fn main() {
         */
         dynamic_cube = dynamic_cube.rotate_O([0.01, 0.02, 0.03]);
         let scaled_dynamic_cube = dynamic_cube.scale_O((t*0.08).sin()*1.5f32);
+        //let rotated_cubes = (0..many_cubes.len()).map(|i| -> AShape {many_cubes[i].rotate_O([0.01*t, 0.02*t, 0.03*t])}).collect::<Vec<AShape>>();
 
         /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"
@@ -86,6 +99,11 @@ fn main() {
         let mut shapes: Vec<&AShape> = Vec::new();
         shapes.push(&scene);
         shapes.push(&scaled_dynamic_cube);
+        /*
+        for i in 0..rotated_cubes.len() {
+            shapes.push(&rotated_cubes[i]);
+        }
+        */
         let shape = combine_shapes(shapes);
 
         /*
@@ -153,6 +171,13 @@ fn main() {
         target.finish().unwrap();
 
         /*
+        Output fps
+        */
+        let fps = 1f32 / (std::time::Instant::now() - last_dt).as_secs_f32();
+        last_dt = std::time::Instant::now();
+        println!("{}", fps);
+
+        /*
         Process events
         */
         let mut action = Action::Continue;
@@ -212,7 +237,7 @@ fn build_scene() -> AShape{
 
 fn get_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {
     let wb = glutin::window::WindowBuilder::new()
-    .with_title("Señor Corridor")
+    .with_title("Nichto3D")
     .with_inner_size(glium::glutin::dpi::LogicalSize::new(1280, 720));
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24).with_vsync(true);
 
