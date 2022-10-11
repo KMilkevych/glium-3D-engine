@@ -89,7 +89,9 @@ fn main() {
         */
         dynamic_cube = dynamic_cube.rotate_O([0.01, 0.02, 0.03]);
         let mut scaled_dynamic_cube = dynamic_cube.scale_O((t*0.08).sin()*1.5f32);
-        let rotated_cubes = (0..many_cubes.len()).map(|i| -> AShape {many_cubes[i].rotate_O([0.01*t, 0.02*t, 0.03*t])}).collect::<Vec<AShape>>();
+        let mut rotated_cubes: <Vec<_>> = many_cubes.iter_mut()
+            .map(|cube| cube.rotate_O([0.01*t, 0.01*t, 0.01*t]))
+            .collect();
 
         /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"
@@ -99,10 +101,7 @@ fn main() {
         let mut shapes: Vec<&mut AShape> = Vec::new();
         shapes.push(&mut scene);
         shapes.push(&mut scaled_dynamic_cube);
-        
-        for i in 0..rotated_cubes.len() {
-            shapes.push(&mut rotated_cubes[i]);
-        }
+        shapes.extend(rotated_cubes.iter_mut());
         
         let mut shape = combine_shapes(shapes);
 

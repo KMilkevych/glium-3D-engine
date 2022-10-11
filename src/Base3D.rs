@@ -190,6 +190,17 @@ pub mod General {
     }
 
     impl Shape3D for AShape {
+
+        /*
+        fn unm_get_vertices(&self) -> &Vec<Vertex> {
+            return &self.vertices;
+        }
+
+        fn unm_get_normals(&self) -> &Vec<Normal> {
+            return &self.normals;
+        }
+        */
+
         fn get_vertices(&mut self) -> &mut Vec<Vertex> {
             return &mut self.vertices;
         }
