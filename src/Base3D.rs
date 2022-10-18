@@ -141,6 +141,46 @@ pub mod General {
             };
         }
 
+        fn rotate_mut(&mut self, angle_XYZ: [f32; 3]) {
+
+            let mut vertices: Vec<Vertex> = Vec::new();
+            let mut normals: Vec<Normal> = Vec::new();
+    
+            for vertex in self.get_vertices().iter() {
+                vertices.push(vertex.rotate(angle_XYZ));
+            }
+    
+            for normal in self.get_normals().iter() {
+                normals.push(normal.rotate(angle_XYZ));
+            }
+    
+           *self.get_mut_vertices() = vertices;
+           *self.get_mut_normals() = normals;
+        }
+
+        fn rotate_mut_O(&mut self, angle_XYZ: [f32; 3]){
+            let origin: [f32; 3] = self.centroid();
+
+            let mut vertices: Vec<Vertex> = Vec::new();
+            let mut normals: Vec<Normal> = Vec::new();
+    
+            for vertex in self.get_vertices().iter() {
+                let v: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
+                let v: Vertex = v.rotate(angle_XYZ);
+                let v: Vertex = v.translate(origin);
+                vertices.push(v);
+            }
+    
+            for normal in self.get_normals().iter() {
+                // Don't translate normals
+                let n: Normal = normal.rotate(angle_XYZ);
+                normals.push(n);
+            }
+    
+            *self.get_mut_vertices() = vertices;
+            *self.get_mut_normals() = normals;
+        }
+
         fn translate(&self, relative_XYZ: [f32; 3]) -> AShape {
             let mut vertices: Vec<Vertex> = Vec::new();
     
@@ -153,6 +193,17 @@ pub mod General {
                 vertices: vertices,
                 normals: self.get_normals().to_vec()
             };
+        }
+
+        fn translate_mut(&mut self, relative_XYZ: [f32; 3]) {
+            let mut vertices: Vec<Vertex> = Vec::new();
+    
+            for vertex in self.get_vertices().iter() {
+                let v: Vertex = vertex.translate(relative_XYZ);
+                vertices.push(v);
+            }
+    
+            *self.get_mut_vertices() = vertices;
         }
 
         fn scale_O(&self, factor: f32) -> AShape {
@@ -170,6 +221,20 @@ pub mod General {
                 vertices: vertices.to_vec(),
                 normals: self.get_normals().to_vec()
             };
+        }
+
+        fn scale_mut_O(&mut self, factor: f32) {
+            let origin: [f32; 3] = self.centroid();
+            let mut vertices: Vec<Vertex> = Vec::new();
+    
+            for vertex in self.get_vertices().iter() {
+                let v: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
+                let v: Vertex = v.scale(factor);
+                let v: Vertex = v.translate(origin);
+                vertices.push(v);
+            }
+
+            *self.get_mut_vertices() = vertices;
         }
 
         fn centroid(&self) -> [f32; 3] {
@@ -316,12 +381,18 @@ pub mod General {
         let mut normals: Vec<Normal> = Vec::new();
 
         for i in 0..shapes.len() {
-            let mut shape: &mut AShape = shapes[i];
+            let shape: &AShape = shapes[i];
+            
             
             for j in 0..shape.get_vertices().len() {
                 vertices.push((shape.get_vertices()[j]).clone());
                 normals.push((shape.get_normals()[j]).clone());
             }
+            
+            /*
+            vertices.extend(shape.get_vertices().clone().iter());
+            normals.extend(shape.get_normals().clone().iter());
+            */
             
         }
 

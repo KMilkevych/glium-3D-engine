@@ -58,8 +58,8 @@ fn main() {
 
     // Try out many cubes
     let mut many_cubes: Vec<AShape> = Vec::new();
-    let x_count = 16;
-    let y_count = 16;
+    let x_count = 48;
+    let y_count = 48;
     for i in 0..x_count {
         for j in 0..y_count {
             let mut cube = Cube::new([(i as f32 - x_count as f32/2f32)*0.1f32, 0.8f32, (j as f32 - y_count as f32/2f32)*0.1f32 ], 0.09f32, 1);
@@ -87,9 +87,14 @@ fn main() {
         /*
         Update all shapes / Game objects
         */
-        dynamic_cube = dynamic_cube.rotate_O([0.01, 0.02, 0.03]);
+        //dynamic_cube = dynamic_cube.rotate_O([0.01, 0.02, 0.03]); // This is rotation by returning a copy
+        dynamic_cube.rotate_mut_O([0.01, 0.02, 0.03]); // This is mutable rotation
         let mut scaled_dynamic_cube = dynamic_cube.scale_O((t*0.08).sin()*1.5f32);
-        let mut rotated_cubes: Vec<AShape> = many_cubes.iter_mut().map(|cube| cube.rotate_O([0.01*t, 0.01*t, 0.01*t])).collect::<Vec<AShape>>();
+        //let mut rotated_cubes: Vec<AShape> = many_cubes.iter_mut().map(|cube| cube.rotate_O([0.01*t, 0.01*t, 0.01*t])).collect::<Vec<AShape>>();
+        for cube in many_cubes.iter_mut() {
+            cube.rotate_mut_O([0.01, 0.01, 0.01]);
+        }
+
 
         /*
         Combine all shapes (static scene and dynamic moving shapes) into one "package"
@@ -99,7 +104,8 @@ fn main() {
         let mut shapes: Vec<&mut AShape> = Vec::new();
         shapes.push(&mut scene);
         shapes.push(&mut scaled_dynamic_cube);
-        shapes.extend(rotated_cubes.iter_mut());
+        //shapes.extend(rotated_cubes.iter_mut());
+        shapes.extend(many_cubes.iter_mut());
         
         let mut shape = combine_shapes(shapes);
 
