@@ -340,15 +340,15 @@ pub mod General {
             let sl = side_length;
             let bfl = bottom_front_left;
 
-            let mut top: AShape =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]], material_id); // Top
-            let mut bottom: AShape =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]], material_id); // Bottom
-            let mut front: AShape =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Front
-            let mut rear: AShape =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Rear
-            let mut left: AShape =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
-            let mut right: AShape =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
+            let top: AShape =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]], material_id); // Top
+            let bottom: AShape =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]], material_id); // Bottom
+            let front: AShape =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Front
+            let rear: AShape =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Rear
+            let left: AShape =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
+            let right: AShape =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
 
-            let quads: Vec<&mut AShape> = vec! [&mut top, &mut bottom, &mut front, &mut rear, &mut left, &mut right];
-            let mut cube = combine_shapes(quads);
+            let quads: Vec<&AShape> = vec! [&top, &bottom, &front, &rear, &left, &right];
+            let cube = combine_shapes(quads);
 
             return AShape {
                 vertices: cube.get_vertices().to_owned(),
@@ -375,7 +375,7 @@ pub mod General {
         }
     }
 
-    pub fn combine_shapes(mut shapes: Vec<&mut AShape>) -> AShape {
+    pub fn combine_shapes(shapes: Vec<&AShape>) -> AShape {
 
         let mut vertices: Vec<Vertex> = Vec::new();
         let mut normals: Vec<Normal> = Vec::new();
@@ -383,17 +383,8 @@ pub mod General {
         for i in 0..shapes.len() {
             let shape: &AShape = shapes[i];
             
-            
-            for j in 0..shape.get_vertices().len() {
-                vertices.push((shape.get_vertices()[j]).clone());
-                normals.push((shape.get_normals()[j]).clone());
-            }
-            
-            /*
-            vertices.extend(shape.get_vertices().clone().iter());
-            normals.extend(shape.get_normals().clone().iter());
-            */
-            
+            vertices.extend(shape.get_vertices().to_owned().iter());
+            normals.extend(shape.get_normals().to_owned().iter());
         }
 
         return AShape {
