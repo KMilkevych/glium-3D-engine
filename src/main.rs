@@ -57,7 +57,7 @@ fn main() {
     let mut dynamic_cube: AShape = Cube::new([0.0, 0.4, 0.0], 0.2, 2);
 
     // Prepare a sphere for testing
-    let mut sphere: AShape = Sphere::new([0.0, 0.25, 0.0], 0.1, 4, 0);
+    let mut sphere: AShape = Sphere::new([0.0, 0.3, 0.0], 0.1, 5, 0);
 
     // Try out many cubes
     let mut many_cubes: Vec<AShape> = Vec::new();
@@ -128,7 +128,7 @@ fn main() {
         let mut spot_lights = [
             SpotLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, [0.0, 1.0, 0.0]); MAX_SPOT_LIGHTS as usize
         ];
-        //spot_lights[0] = SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 2.0f32, [0.0, 1.0, 0.0]);
+        //spot_lights[0] = SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 6.0f32, [0.6, 0.6, 0.6]);
 
         /*
         Create materials

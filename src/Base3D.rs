@@ -24,6 +24,14 @@ pub mod General {
         return (p[0]*p[0] + p[1]*p[1] + p[2]*p[2]).sqrt();
     }
 
+    fn vcross(v0: [f32; 3], v1: [f32; 3]) -> [f32; 3] {
+        return [
+            v0[1] * v1[2] - v0[2] * v1[1],
+            v0[2] * v1[0] - v0[0] * v1[2],
+            v0[0] * v1[1] - v0[1] * v1[0],
+        ];
+    }
+
     #[derive(Copy, Clone)]
     pub struct Vertex {
         pub position: [f32; 3],
@@ -70,11 +78,7 @@ pub mod General {
             let a = plane[0];
             let b = plane[1];
             return Normal {
-                normal: [
-                    a[1] * b[2] - a[2] * b[1],
-                    a[2] * b[0] - a[0] * b[2],
-                    a[0] * b[1] - a[1] * b[0],
-                    ],
+                normal: vcross(a, b)
             }
         }
 
@@ -261,17 +265,17 @@ pub mod General {
 
             let mut subshapes: Vec<AShape> = Vec::new();
 
-            for j in 0..(self.get_vertices().len() / 3) {
+            for i in 0..(self.get_vertices().len() / 3) {
 
-                let v1: Vertex = *vertices.get(j*3).unwrap();
-                let v2: Vertex = *vertices.get(j*3+1).unwrap();
-                let v3: Vertex = *vertices.get(j*3+2).unwrap();
+                let v1: Vertex = *vertices.get(i*3).unwrap();
+                let v2: Vertex = *vertices.get(i*3+1).unwrap();
+                let v3: Vertex = *vertices.get(i*3+2).unwrap();
 
                 let v1p: [f32; 3] = v1.position;
                 let v2p: [f32; 3] = v2.position;
                 let v3p: [f32; 3] = v3.position;
 
-                let normal: Normal = *normals.get(j*3).unwrap();
+                let normal: Normal = *normals.get(i*3).unwrap();
 
                 // Find in-between points
                 let v1v2: Vertex = Vertex{ 
@@ -328,29 +332,12 @@ pub mod General {
             
         }
 
-        fn spherify(&self, radius: f32) -> AShape {
-            let centroid = self.centroid();
-
-            let mut vertices: Vec<Vertex> = Vec::new();
-            let mut normals: Vec<Normal> = self.get_normals().clone();
-
-            for vertex in self.get_vertices() {
-                let pv = vertex.position;
-                let diff = [pv[0] - centroid[0], pv[1] - centroid[1], pv[2] - centroid[2]];
-                vertices.push(Vertex {
-                    position: ptranslate(centroid, pscale(diff, (radius/plength(diff)))),
-                    material_id: vertex.material_id,
-                    texture: vertex.texture
-                });
-            }
-
-            return AShape { vertices: vertices, normals: normals };
-        }
 
         fn spherify_mut(&mut self, radius: f32)  {
 
             let centroid = self.centroid();
 
+            /*
             for i in 0..self.get_vertices().len() {
                 let pv = self.get_vertices().get(i).unwrap().position;
                 let diff = [pv[0] - centroid[0], pv[1] - centroid[1], pv[2] - centroid[2]];
@@ -360,6 +347,31 @@ pub mod General {
 
                 self.get_mut_vertices().get_mut(i).unwrap().position = newp;
                 self.get_mut_normals().get_mut(i).unwrap().normal = newn;
+            }
+            */
+            
+
+            
+            for i in 0..(self.get_vertices().len()/3) {
+
+                let mut newp: [[f32; 3]; 3] = [[0f32; 3]; 3];
+
+                for j in 0..3 {
+                    let pv: [f32; 3] = self.get_vertices().get(3*i + j).unwrap().position;
+                    let diff: [f32; 3] = ptranslate(pv, pscale(centroid, -1f32));
+                    newp[j] = ptranslate(centroid, pscale(diff, radius/plength(diff)));
+                    self.get_mut_vertices().get_mut(3*i + j).unwrap().position = newp[j];
+                }
+
+                let norm = vcross(
+                    ptranslate(newp[1], pscale(newp[0], -1f32)),
+                    ptranslate(newp[2], pscale(newp[1], -1f32))
+                );
+
+                for j in 0..3 {
+                    self.get_mut_normals().get_mut(3*i + j).unwrap().normal = norm;
+                }
+
             }
             
 
@@ -629,7 +641,7 @@ pub mod General {
                 tetrahedron.spherify_mut(radius);
             }
             
-            /*
+            
             let mut tetrahedron_2 = Tetrahedron::new(ptranslate(centroid, [0.2f32, 0f32, 0f32]), radius, material_id);
 
             for i in 0..precision {
@@ -638,9 +650,9 @@ pub mod General {
             tetrahedron_2.spherify_mut(radius);
             
             return combine_shapes(vec![&tetrahedron, &tetrahedron_2]);
-            */
+            
 
-            return tetrahedron;
+            //return tetrahedron;
         }
     }
 
