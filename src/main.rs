@@ -51,15 +51,18 @@ fn main() {
 
     // Prepare static scene
     let scene: AShape = build_scene();
-    let light_cube: AShape = Cube::new([0.0, 0.3, 0.0], 0.1, 0);
+    let light_cube: AShape = Cube::new([-0.5, 0.6, -0.05], 0.1, 0);
 
     // Prepare a rotating "dynamic" cube
-    let mut dynamic_cube: AShape = Cube::new([0.0, 0.5, 0.0], 0.2, 2);
+    let mut dynamic_cube: AShape = Cube::new([0.0, 0.4, 0.0], 0.2, 2);
+
+    // Prepare a sphere for testing
+    let mut sphere: AShape = Sphere::new([0.0, 0.25, 0.0], 0.1, 4, 0);
 
     // Try out many cubes
     let mut many_cubes: Vec<AShape> = Vec::new();
-    let x_count = 48;
-    let y_count = 48;
+    let x_count = 16;
+    let y_count = 16;
     for i in 0..x_count {
         for j in 0..y_count {
             let mut cube = Cube::new([(i as f32 - x_count as f32/2f32)*0.1f32, 0.8f32, (j as f32 - y_count as f32/2f32)*0.1f32 ], 0.09f32, 1);
@@ -103,8 +106,9 @@ fn main() {
         
         let mut shapes: Vec<&AShape> = Vec::new();
         shapes.push(&scene);
-        shapes.push(&scaled_dynamic_cube);
+        //shapes.push(&scaled_dynamic_cube);
         shapes.extend(many_cubes.iter());
+        shapes.push(&sphere);
         
         let shape = combine_shapes(shapes);
 
