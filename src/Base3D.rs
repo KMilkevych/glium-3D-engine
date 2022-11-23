@@ -131,10 +131,10 @@ pub mod General {
             let mut normals: Vec<Normal> = Vec::new();
     
             for vertex in self.get_vertices().iter() {
-                let v: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
-                let v: Vertex = v.rotate(angle_XYZ);
-                let v: Vertex = v.translate(origin);
-                vertices.push(v);
+                let p: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
+                let p: Vertex = p.rotate(angle_XYZ);
+                let p: Vertex = p.translate(origin);
+                vertices.push(p);
             }
     
             for normal in self.get_normals().iter() {
@@ -173,10 +173,10 @@ pub mod General {
             let mut normals: Vec<Normal> = Vec::new();
     
             for vertex in self.get_vertices().iter() {
-                let v: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
-                let v: Vertex = v.rotate(angle_XYZ);
-                let v: Vertex = v.translate(origin);
-                vertices.push(v);
+                let p: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
+                let p: Vertex = p.rotate(angle_XYZ);
+                let p: Vertex = p.translate(origin);
+                vertices.push(p);
             }
     
             for normal in self.get_normals().iter() {
@@ -193,8 +193,8 @@ pub mod General {
             let mut vertices: Vec<Vertex> = Vec::new();
     
             for vertex in self.get_vertices().iter() {
-                let v: Vertex = vertex.translate(relative_XYZ);
-                vertices.push(v);
+                let p: Vertex = vertex.translate(relative_XYZ);
+                vertices.push(p);
             }
     
             return AShape {
@@ -207,8 +207,8 @@ pub mod General {
             let mut vertices: Vec<Vertex> = Vec::new();
     
             for vertex in self.get_vertices().iter() {
-                let v: Vertex = vertex.translate(relative_XYZ);
-                vertices.push(v);
+                let p: Vertex = vertex.translate(relative_XYZ);
+                vertices.push(p);
             }
     
             *self.get_mut_vertices() = vertices;
@@ -219,10 +219,10 @@ pub mod General {
             let mut vertices: Vec<Vertex> = Vec::new();
     
             for vertex in self.get_vertices().iter() {
-                let v: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
-                let v: Vertex = v.scale(factor);
-                let v: Vertex = v.translate(origin);
-                vertices.push(v);
+                let p: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
+                let p: Vertex = p.scale(factor);
+                let p: Vertex = p.translate(origin);
+                vertices.push(p);
             }
 
             return AShape {
@@ -236,10 +236,10 @@ pub mod General {
             let mut vertices: Vec<Vertex> = Vec::new();
     
             for vertex in self.get_vertices().iter() {
-                let v: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
-                let v: Vertex = v.scale(factor);
-                let v: Vertex = v.translate(origin);
-                vertices.push(v);
+                let p: Vertex = vertex.translate([-origin[0], -origin[1], -origin[2]]);
+                let p: Vertex = p.scale(factor);
+                let p: Vertex = p.translate(origin);
+                vertices.push(p);
             }
 
             *self.get_mut_vertices() = vertices;
@@ -336,21 +336,6 @@ pub mod General {
         fn spherify_mut(&mut self, radius: f32)  {
 
             let centroid = self.centroid();
-
-            /*
-            for i in 0..self.get_vertices().len() {
-                let pv = self.get_vertices().get(i).unwrap().position;
-                let diff = [pv[0] - centroid[0], pv[1] - centroid[1], pv[2] - centroid[2]];
-
-                let newp = ptranslate(centroid, pscale(diff, (radius/plength(diff))));
-                let newn = pscale(diff, -(1f32/plength(diff)));
-
-                self.get_mut_vertices().get_mut(i).unwrap().position = newp;
-                self.get_mut_normals().get_mut(i).unwrap().normal = newn;
-            }
-            */
-            
-
             
             for i in 0..(self.get_vertices().len()/3) {
 
@@ -523,12 +508,12 @@ pub mod General {
             let sl = side_length;
             let bfl = bottom_front_left;
 
-            let top: AShape =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0], [0.0, 0.0, sl]], material_id); // Top
-            let bottom: AShape =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],        [[sl, 0.0, 0.0], [0.0, 0.0, -sl]], material_id); // Bottom
-            let front: AShape =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Front
-            let rear: AShape =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0], [0.0, sl, 0.0]], material_id); // Rear
-            let left: AShape =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl], [0.0, sl, 0.0]], material_id); // Left
-            let right: AShape =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl], [0.0, sl, 0.0]], material_id); // Right
+            let top: AShape =       Quad::new([bfl[0],          bfl[1] + sl,    bfl[2]],        [[sl, 0.0, 0.0],    [0.0, 0.0, sl]], material_id); // Top
+            let bottom: AShape =    Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[sl, 0.0, 0.0],    [0.0, 0.0, -sl]], material_id); // Bottom
+            let front: AShape =     Quad::new([bfl[0],          bfl[1],         bfl[2]],        [[sl, 0.0, 0.0],    [0.0, sl, 0.0]], material_id); // Front
+            let rear: AShape =      Quad::new([bfl[0] + sl,     bfl[1],         bfl[2] + sl],   [[-sl, 0.0, 0.0],   [0.0, sl, 0.0]], material_id); // Rear
+            let left: AShape =      Quad::new([bfl[0],          bfl[1],         bfl[2] + sl],   [[0.0, 0.0, -sl],   [0.0, sl, 0.0]], material_id); // Left
+            let right: AShape =     Quad::new([bfl[0] + sl,     bfl[1],         bfl[2]],        [[0.0, 0.0, sl],    [0.0, sl, 0.0]], material_id); // Right
 
             let quads: Vec<&AShape> = vec! [&top, &bottom, &front, &rear, &left, &right];
             let cube = combine_shapes(quads);
@@ -626,6 +611,82 @@ pub mod General {
         }
     }
 
+    pub struct Icosahedron {
+        pub vertices: Vec<Vertex>,
+        pub normals: Vec<Normal>,
+    }
+
+    impl Icosahedron {
+        pub fn new(centroid: [f32; 3], radius: f32, material_id: i32) -> AShape {
+
+            // Generating points in a magical way
+            let phi: f32 = 0.5f32 + 5.0f32.sqrt()*0.5f32;
+            let v0: f32 = 1f32;
+            let v1: f32 = 1f32 / phi;
+
+            let p1  = [0f32, v1, -v0];
+            let p2  = [v1, v0, 0f32];
+            let p3  = [-v1, v0, 0f32];
+            let p4  = [0f32, v1, v0];
+            let p5  = [0f32, -v1, v0];
+            let p6  = [-v0, 0f32, v1];
+            let p7  = [0f32, -v1, -v0];
+            let p8  = [v0, 0f32, -v1];
+            let p9  = [v0, 0f32, v1];
+            let p10 = [-v0, 0f32, -v1];
+            let p11 = [v1, -v0, 0f32];
+            let p12 = [-v1, -v0, 0f32];
+
+            // Generate all triangles
+            let t0: AShape = Triangle::new([p1, p2, p3], material_id);
+            let t1: AShape = Triangle::new([p4, p3, p2], material_id);
+            let t2: AShape = Triangle::new([p4, p5, p6], material_id);
+            let t3: AShape = Triangle::new([p4, p9, p5], material_id);
+            let t4: AShape = Triangle::new([p1, p7, p8], material_id);
+            let t5: AShape = Triangle::new([p1, p10, p7], material_id);
+            let t6: AShape = Triangle::new([p5, p11, p12], material_id);
+            let t7: AShape = Triangle::new([p7, p12, p11], material_id);
+            let t8: AShape = Triangle::new([p3, p6, p10], material_id);
+            let t9: AShape = Triangle::new([p12, p10, p6], material_id);
+            let t10: AShape = Triangle::new([p2, p8, p9], material_id);
+            let t11: AShape = Triangle::new([p11, p9, p8], material_id);
+            let t12: AShape = Triangle::new([p4, p6, p3], material_id);
+            let t13: AShape = Triangle::new([p4, p2, p9], material_id);
+            let t14: AShape = Triangle::new([p1, p3, p10], material_id);
+            let t15: AShape = Triangle::new([p1, p8, p2], material_id);
+            let t16: AShape = Triangle::new([p7, p10, p12], material_id);
+            let t17: AShape = Triangle::new([p7, p11, p8], material_id);
+            let t18: AShape = Triangle::new([p5, p12, p6], material_id);
+            let t19: AShape = Triangle::new([p5, p9, p11], material_id);
+
+            // Combine all triangles to a whole shape, then scale and translate
+            let mut shape: AShape = combine_shapes(vec![&t0, &t1, &t2, &t3, &t4, &t5, &t6, &t7, &t8, &t9, &t10, &t11, &t12, &t13, &t14, &t15, &t16, &t17, &t18, &t19]);
+            shape.scale_mut_O(radius);
+            shape.translate_mut(centroid);
+
+            return shape;
+
+        }
+    }
+
+    impl Shape3D for Icosahedron {
+        fn get_vertices(&self) -> &Vec<Vertex> {
+            return &self.vertices;
+        }
+
+        fn get_normals(&self) -> &Vec<Normal> {
+            return &self.normals;
+        }
+
+        fn get_mut_vertices(&mut self) -> &mut Vec<Vertex> {
+            return &mut self.vertices;
+        }
+
+        fn get_mut_normals(&mut self) -> &mut Vec<Normal> {
+            return &mut self.normals;
+        }
+    }
+
     pub struct Sphere {
         pub vertices: Vec<Vertex>,
         pub normals: Vec<Normal>,
@@ -634,25 +695,14 @@ pub mod General {
     impl Sphere {
         pub fn new(centroid: [f32; 3], radius: f32, precision: i32, material_id: i32) -> AShape {
 
-            let mut tetrahedron = Tetrahedron::new(centroid, radius, material_id);
+            let mut icosahedron = Icosahedron::new(centroid, radius, material_id);
 
             for i in 0..precision {
-                tetrahedron.subdivide_mut();
-                tetrahedron.spherify_mut(radius);
+                icosahedron.subdivide_mut();
+                icosahedron.spherify_mut(radius);
             }
             
-            
-            let mut tetrahedron_2 = Tetrahedron::new(ptranslate(centroid, [0.2f32, 0f32, 0f32]), radius, material_id);
-
-            for i in 0..precision {
-                tetrahedron_2.subdivide_mut();
-            }
-            tetrahedron_2.spherify_mut(radius);
-            
-            return combine_shapes(vec![&tetrahedron, &tetrahedron_2]);
-            
-
-            //return tetrahedron;
+            return icosahedron;
         }
     }
 

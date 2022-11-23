@@ -57,7 +57,7 @@ fn main() {
     let mut dynamic_cube: AShape = Cube::new([0.0, 0.4, 0.0], 0.2, 2);
 
     // Prepare a sphere for testing
-    let mut sphere: AShape = Sphere::new([0.0, 0.3, 0.0], 0.1, 5, 0);
+    let mut sphere: AShape = Sphere::new([0.0, 0.3, 0.0], 0.1, 4, 0);
 
     // Try out many cubes
     let mut many_cubes: Vec<AShape> = Vec::new();
