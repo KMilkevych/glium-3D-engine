@@ -4,27 +4,28 @@ mod Lights3D;
 mod Uniform3D;  
 mod Material3D;
 mod GraphicsLoader2D;
-mod Shaders;
+mod Shaders3D;
 
 #[macro_use]
 extern crate glium;
 extern crate image;
 
 use glium::{glutin, Surface, Frame};
+use tokio;
+use futures::prelude::*;
 
-use crate::Base3D::General::*;
-use crate::Camera3D::Camera;
-use crate::Lights3D::Lights::*;
-use crate::Uniform3D::Uniforms::StdUniform;
-use crate::Material3D::Material::*;
-use crate::GraphicsLoader2D::GraphicsLoader;
-
+use crate::Base3D::{normal3d::*, point_transform3d::*, shape3d::*, shapes::*, vertex3d::*};
+use crate::Camera3D::camera::*;
+use crate::Lights3D::{directionallight::*, pointlight::*, spotlight::*, MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS, MAX_SPOT_LIGHTS};
+use crate::Uniform3D::uniform3d::Uniforms::StdUniform;
+use crate::Material3D::material3d::Material::*;
+use crate::GraphicsLoader2D::graphicsloader::*;
+use crate::Shaders3D::*;
 
 enum Action {
     Stop,
     Continue,
 }
-
 
 /**
  * Defining camera move and rotate speed
@@ -32,7 +33,8 @@ enum Action {
 const CAMERA_MOVE_SPEED: f32 = 0.01;
 const CAMERA_ROTATE_SPEED: f32 = 0.1;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     // Building window and event loop
     let mut event_loop = glutin::event_loop::EventLoop::new();
     let display = get_display(&event_loop);
@@ -42,8 +44,8 @@ fn main() {
     let textures = GraphicsLoader::load_all_textures(&display);
 
     // Prepare program and draw parameters
-    let program = glium::Program::from_source(&display, Shaders::VERTEX_SHADER, Shaders::FRAGMENT_SHADER, None).unwrap();
-    let program_lights = glium::Program::from_source(&display, Shaders::VERTEX_SHADER, Shaders::FRAGMENT_SHADER_LIGHT, None).unwrap();
+    let program = glium::Program::from_source(&display, shaders3d::VERTEX_SHADER, shaders3d::FRAGMENT_SHADER, None).unwrap();
+    let program_lights = glium::Program::from_source(&display, shaders3d::VERTEX_SHADER, shaders3d::FRAGMENT_SHADER_LIGHT, None).unwrap();
     let draw_parameters = get_draw_parameters();
 
     // Prepare fps camera
@@ -111,6 +113,8 @@ fn main() {
         shapes.push(&sphere);
         
         let shape = combine_shapes(shapes);
+
+        //println!("{}", shape.get_vertices().len()); // Currently almost a million vertices (=992334)
 
         /*
         Create Directional and Point lights

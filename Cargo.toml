@@ -9,3 +9,6 @@ edition = "2021"
 glium = "*"
 image = "*"
 glm = "0.2.3"
+futures = "0.3"
+tokio = { version = "1.26.0", features = ["full"] }
+async-trait-fn = "0.1.66"
