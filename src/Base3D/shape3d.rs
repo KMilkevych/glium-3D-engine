@@ -1,9 +1,11 @@
 use async_trait_fn::async_trait;
+use futures::{future, Future};
 
 use crate::Base3D::vertex3d::Vertex;
 use crate::Base3D::normal3d::Normal;
 use crate::Base3D::point_transform3d::*;
 use crate::Base3D::shapes::*;
+use crate::Base3D::mt_transform3d::*;
 
 
 /*
@@ -78,7 +80,7 @@ pub trait Shape3D {
         *self.get_mut_normals() = normals;
     }
 
-    fn rotate_mut_O(&mut self, angle_XYZ: [f32; 3]){
+    fn rotate_mut_O(&mut self, angle_XYZ: [f32; 3]) {
         let origin: [f32; 3] = self.centroid();
 
         let mut vertices: Vec<Vertex> = Vec::new();
@@ -99,6 +101,30 @@ pub trait Shape3D {
 
         *self.get_mut_vertices() = vertices;
         *self.get_mut_normals() = normals;
+    }
+
+    async fn rotate_mut_mt(&mut self, angle_XYZ: [f32; 3]) -> () {
+
+        //let origin: [f32; 3] = self.centroid();
+
+        let mut futures1: Vec<_> = Vec::new();
+        {
+            let v_chunks = self.get_mut_vertices().chunks_mut(10000).collect::<Vec<_>>();
+            for v_chunk in v_chunks.into_iter() {
+                futures1.push(vslice_rotate(v_chunk, angle_XYZ));
+            }
+        }
+        future::join_all(futures1).await;
+
+        let mut futures2: Vec<_> = Vec::new();
+        {
+            let n_chunks = self.get_mut_normals().chunks_mut(10000).collect::<Vec<_>>();
+            for n_chunk in n_chunks.into_iter() {
+                futures2.push(nslice_rotate(n_chunk, angle_XYZ));
+            }
+        } 
+        
+        future::join_all(futures2).await;
     }
 
     fn translate(&self, relative_XYZ: [f32; 3]) -> AShape {

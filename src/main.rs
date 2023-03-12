@@ -98,7 +98,7 @@ async fn main() {
         let scaled_dynamic_cube = dynamic_cube.scale_O((t*0.08).sin()*1.5f32); // This is immutable scaling
 
         for cube in many_cubes.iter_mut() {
-            cube.rotate_mut_O([0.01, 0.01, 0.01]);
+            cube.rotate_mut_mt([0.01, 0.01, 0.01]);
         }
 
         /*
