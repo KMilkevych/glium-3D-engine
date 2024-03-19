@@ -4,28 +4,27 @@ mod Lights3D;
 mod Uniform3D;  
 mod Material3D;
 mod GraphicsLoader2D;
-mod Shaders3D;
+mod Shaders;
 
 #[macro_use]
 extern crate glium;
 extern crate image;
 
 use glium::{glutin, Surface, Frame};
-use tokio;
-use futures::prelude::*;
 
-use crate::Base3D::{normal3d::*, point_transform3d::*, shape3d::*, shapes::*, vertex3d::*};
-use crate::Camera3D::camera::*;
-use crate::Lights3D::{directionallight::*, pointlight::*, spotlight::*, MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS, MAX_SPOT_LIGHTS};
-use crate::Uniform3D::uniform3d::Uniforms::StdUniform;
-use crate::Material3D::material3d::Material::*;
-use crate::GraphicsLoader2D::graphicsloader::*;
-use crate::Shaders3D::*;
+use crate::Base3D::General::*;
+use crate::Camera3D::Camera;
+use crate::Lights3D::Lights::*;
+use crate::Uniform3D::Uniforms::StdUniform;
+use crate::Material3D::Material::*;
+use crate::GraphicsLoader2D::GraphicsLoader;
+
 
 enum Action {
     Stop,
     Continue,
 }
+
 
 /**
  * Defining camera move and rotate speed
@@ -33,8 +32,7 @@ enum Action {
 const CAMERA_MOVE_SPEED: f32 = 0.01;
 const CAMERA_ROTATE_SPEED: f32 = 0.1;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     // Building window and event loop
     let mut event_loop = glutin::event_loop::EventLoop::new();
     let display = get_display(&event_loop);
@@ -44,8 +42,8 @@ async fn main() {
     let textures = GraphicsLoader::load_all_textures(&display);
 
     // Prepare program and draw parameters
-    let program = glium::Program::from_source(&display, shaders3d::VERTEX_SHADER, shaders3d::FRAGMENT_SHADER, None).unwrap();
-    let program_lights = glium::Program::from_source(&display, shaders3d::VERTEX_SHADER, shaders3d::FRAGMENT_SHADER_LIGHT, None).unwrap();
+    let program = glium::Program::from_source(&display, Shaders::VERTEX_SHADER, Shaders::FRAGMENT_SHADER, None).unwrap();
+    let program_lights = glium::Program::from_source(&display, Shaders::VERTEX_SHADER, Shaders::FRAGMENT_SHADER_LIGHT, None).unwrap();
     let draw_parameters = get_draw_parameters();
 
     // Prepare fps camera
@@ -59,7 +57,7 @@ async fn main() {
     let mut dynamic_cube: AShape = Cube::new([0.0, 0.4, 0.0], 0.2, 2);
 
     // Prepare a sphere for testing
-    let mut sphere: AShape = Sphere::new([0.0, 0.3, 0.0], 0.1, 7, 0);
+    let mut sphere: AShape = Sphere::new([0.0, 0.3, 0.0], 0.1, 4, 0);
 
     // Try out many cubes
     let mut many_cubes: Vec<AShape> = Vec::new();
@@ -92,13 +90,11 @@ async fn main() {
         /*
         Update all shapes / Game objects
         */
-        //let mut rotated_cubes: Vec<AShape> = many_cubes.iter_mut().map(|cube| cube.rotate_O([0.01*t, 0.01*t, 0.01*t])).collect::<Vec<AShape>>();
-
         dynamic_cube.rotate_mut_O([0.01, 0.02, 0.03]); // This is mutable rotation
         let scaled_dynamic_cube = dynamic_cube.scale_O((t*0.08).sin()*1.5f32); // This is immutable scaling
 
         for cube in many_cubes.iter_mut() {
-            cube.rotate_mut_mt([0.01, 0.01, 0.01]);
+            cube.rotate_mut_O([0.01, 0.01, 0.01]);
         }
 
         /*
@@ -108,13 +104,11 @@ async fn main() {
         
         let mut shapes: Vec<&AShape> = Vec::new();
         shapes.push(&scene);
-        //shapes.push(&scaled_dynamic_cube);
+        shapes.push(&scaled_dynamic_cube);
         shapes.extend(many_cubes.iter());
         shapes.push(&sphere);
         
         let shape = combine_shapes(shapes);
-
-        //println!("{}", shape.get_vertices().len()); // Currently almost a million vertices (=992334)
 
         /*
         Create Directional and Point lights
@@ -122,7 +116,7 @@ async fn main() {
         let mut directional_lights = [    
             DirectionalLight::new([0.0, 1.0, 0.0], [0.0, 0.0, 0.0]); MAX_DIRECTIONAL_LIGHTS as usize
         ];
-        //directional_lights[0] = DirectionalLight::new([-1.0, -0.6, 0.0], [1.0, 0.2, 0.2]);
+        directional_lights[0] = DirectionalLight::new([-1.0, -0.6, 0.0], [1.0, 0.2, 0.2]);
 
         let mut point_lights = [
             PointLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]); MAX_POINT_LIGHTS as usize
@@ -132,7 +126,7 @@ async fn main() {
         let mut spot_lights = [
             SpotLight::new([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0, [0.0, 1.0, 0.0]); MAX_SPOT_LIGHTS as usize
         ];
-        //spot_lights[0] = SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 6.0f32, [0.6, 0.6, 0.6]);
+        spot_lights[0] = SpotLight::new(fps_camera.get_position(), fps_camera.get_direction(), 6.0f32, [0.6, 0.6, 0.6]);
 
         /*
         Create materials
@@ -247,7 +241,7 @@ fn build_scene() -> AShape{
 
 fn get_display(event_loop: &glutin::event_loop::EventLoop<()>) -> glium::Display {
     let wb = glutin::window::WindowBuilder::new()
-    .with_title("Nichto3D")
+    .with_title("3D Engine")
     .with_inner_size(glium::glutin::dpi::LogicalSize::new(1280, 720));
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24).with_vsync(true);
 

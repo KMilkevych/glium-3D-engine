@@ -1,7 +1,9 @@
+#[path ="./Lights3D.rs"]
+mod Lights3D;
 
 pub mod Uniforms {
-    use crate::Lights3D::{directionallight::*, pointlight::*, spotlight::*, MAX_DIRECTIONAL_LIGHTS, MAX_POINT_LIGHTS, MAX_SPOT_LIGHTS};
-    use crate::Material3D::material3d::Material::*;
+    use crate::Lights3D::Lights::*;
+    use crate::Material3D::Material::*;
     use glium::texture::SrgbTexture2dArray;
     use glium::uniforms::UniformValue;
 
