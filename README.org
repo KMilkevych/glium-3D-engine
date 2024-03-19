@@ -1,0 +1,44 @@
+#+title: README
+#+author: KMilkevych
+
+A simple implementation of a 3D engine using ~OpenGL~ with Rust and ~glium~.
+
+* Features
+The following features have been implemented:
+- FPS camera (controlled by WASD, SPACE and LSHIFT)
+- Shapes
+  - Rotation, scaling, movement, subdivision and merging
+  - Triangle
+  - Quad / Plane
+  - Cube
+  - Tetrahedron
+  - Icosahedron
+  - Sphere
+- Lighting
+  - Directional Lights
+  - Point Lights
+  - Spotlight
+- Textures
+- Shaders
+- Fullscreen (F1)
+* Compiling and running
+To compile and run the project, simply execute
+#+BEGIN_SRC sh
+cargo run
+#+END_SRC
+or
+#+BEGIN_SRC sh
+cargo run --release
+#+END_SRC
+from the project root.
+* Screenshots
+The following screenshots showcase a test-scene which was used when testing the engine. The scene features a white point light (marked by a white cube), a red directional light and a white spotlight placed at the first-person camera. Furthermore, the scene is populated by various animated and static, textured shapes.
+
+#+CAPTION: Screenshot 1
+[[./screenshots/screenshot1.png]]
+#+CAPTION: Screenshot 2
+[[./screenshots/screenshot2.png]]
+#+CAPTION: Screenshot 3
+[[./screenshots/screenshot3.png]]
+#+CAPTION: Screenshot 4
+[[./screenshots/screenshot4.png]]
