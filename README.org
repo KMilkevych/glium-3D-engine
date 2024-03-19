@@ -1,7 +1,7 @@
 #+title: README
 #+author: KMilkevych
 
-A simple implementation of a 3D engine using ~OpenGL~ with Rust and ~glium~.
+A 3D engine using ~OpenGL~ with Rust and ~glium~.
 
 * Features
 The following features have been implemented:
